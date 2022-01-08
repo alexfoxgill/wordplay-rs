@@ -1,19 +1,22 @@
 use crate::normalized_word::*;
 
 type UFreq = u8;
+const ALPHABET_LEN: usize = 26;
 
 #[derive(Debug, PartialEq)]
 pub struct CharFreq {
-    pub freqs: [UFreq; 26],
+    pub freqs: [UFreq; ALPHABET_LEN],
 }
 
 impl CharFreq {
-    pub fn new(freqs: [UFreq; 26]) -> CharFreq {
+    pub fn new(freqs: [UFreq; ALPHABET_LEN]) -> CharFreq {
         CharFreq { freqs }
     }
 
     pub fn new_empty() -> CharFreq {
-        CharFreq { freqs: [0; 26] }
+        CharFreq {
+            freqs: [0; ALPHABET_LEN],
+        }
     }
 
     pub fn get(&self, ch: NormalizedChar) -> UFreq {
@@ -39,8 +42,8 @@ impl CharFreq {
     pub fn compare(self, other: &CharFreq) -> CharFreqComparisonResult {
         use CharFreqComparison::*;
         let mut comp = Same;
-        let mut diff: [UFreq; 26] = [0; 26];
-        for i in 0..26 {
+        let mut diff: [UFreq; ALPHABET_LEN] = [0; ALPHABET_LEN];
+        for i in 0..ALPHABET_LEN {
             let a = self.freqs[i];
             let b = other.freqs[i];
 

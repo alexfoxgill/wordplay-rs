@@ -42,9 +42,9 @@ impl CharFreq {
         use CharFreqComparison::*;
         let mut comp = Same;
         let mut diff: CharMap<UFreq> = Default::default();
-        for i in NormalizedChar::iter() {
-            let a = self.freqs.get(i);
-            let b = other.freqs.get(i);
+        for ch in NormalizedChar::iter() {
+            let a = self.get(ch);
+            let b = other.get(ch);
 
             if a == b {
                 continue;
@@ -57,7 +57,7 @@ impl CharFreq {
                 if comp == Same {
                     comp = Subset;
                 }
-                diff.set(i, b - a);
+                diff.set(ch, b - a);
             }
 
             if a > b {
@@ -67,7 +67,7 @@ impl CharFreq {
                 if comp == Same {
                     comp = Superset;
                 }
-                diff.set(i, a - b);
+                diff.set(ch, a - b);
             }
         }
 

@@ -21,19 +21,16 @@ impl CharFreq {
     }
 
     pub fn set(&mut self, ch: NormalizedChar, value: UFreq) {
-        let idx = ch as usize;
-        self.freqs[idx as usize] = value;
+        self.freqs[ch as usize] = value;
     }
 
     pub fn update(&mut self, ch: NormalizedChar, f: fn(UFreq) -> UFreq) {
-        let idx = ch as usize;
-        let curr = self.freqs[idx as usize];
-        self.freqs[idx as usize] = f(curr);
+        self.set(ch, f(self.get(ch)))
     }
 
     pub fn from(word: &NormalizedWord) -> CharFreq {
         let mut res = CharFreq::new_empty();
-        for &ch in word.chars.iter() {
+        for &ch in word.iter_chars() {
             res.update(ch, |x| x + 1);
         }
         res

@@ -1,5 +1,8 @@
+use strum::IntoEnumIterator;
+use strum_macros::EnumIter;
+
 #[repr(u8)]
-#[derive(Debug, PartialEq, Clone, Copy, FromPrimitive)]
+#[derive(Debug, PartialEq, Clone, Copy, FromPrimitive, EnumIter)]
 pub enum NormalizedChar {
     A,
     B,
@@ -207,5 +210,12 @@ mod tests {
         let nw = mk("ABC");
 
         assert!(!nw.is_palindrome())
+    }
+
+    #[test]
+    fn chars_can_be_iterated() {
+        let len = NormalizedChar::iter().len();
+
+        assert_eq!(len, ALPHABET_SIZE)
     }
 }

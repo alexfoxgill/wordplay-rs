@@ -29,6 +29,8 @@ pub enum NormalizedChar {
     Z,
 }
 
+pub const ALPHABET_SIZE: usize = 26;
+
 impl NormalizedChar {
     pub fn from_char(ch: char) -> Option<NormalizedChar> {
         let ascii_ch = ch.to_ascii_uppercase();

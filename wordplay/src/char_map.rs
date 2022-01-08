@@ -17,6 +17,10 @@ impl<T> CharMap<T> {
     pub fn set(&mut self, ch: NormalizedChar, t: T) {
         self.array[ch as usize] = t;
     }
+
+    pub fn iter(&self) -> std::slice::Iter<T> {
+        self.array.iter()
+    }
 }
 
 impl<T: Default> Default for CharMap<T> {

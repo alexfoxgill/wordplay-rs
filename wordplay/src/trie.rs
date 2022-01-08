@@ -81,4 +81,17 @@ mod tests {
 
         assert_eq!(res, Some(&vec![1]))
     }
+
+    #[test]
+    fn add_multiple() {
+        let mut trie: Trie<i32> = Default::default();
+
+        let nw = NormalizedWord::from_str("ABC");
+        trie.add(&nw, 1);
+        trie.add(&nw, 2);
+
+        let res = trie.get(&nw);
+
+        assert_eq!(res, Some(&vec![1, 2]))
+    }
 }

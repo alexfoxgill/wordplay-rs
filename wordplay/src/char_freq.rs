@@ -1,4 +1,4 @@
-use ascii::{AsciiChar, AsciiStr};
+use crate::normalized_word::*;
 
 #[derive(Debug, PartialEq)]
 pub struct CharFreq {
@@ -14,26 +14,21 @@ impl CharFreq {
         CharFreq { freqs: [0; 26] }
     }
 
-    pub fn set(&mut self, ch: AsciiChar, value: u8) {
-        let idx = (ch as u8) - (AsciiChar::A as u8);
+    pub fn set(&mut self, ch: NormalizedChar, value: u8) {
+        let idx = ch as usize;
         self.freqs[idx as usize] = value;
     }
 
-    pub fn update(&mut self, ch: AsciiChar, f: fn(u8) -> u8) {
-        let idx = (ch as u8) - (AsciiChar::A as u8);
+    pub fn update(&mut self, ch: NormalizedChar, f: fn(u8) -> u8) {
+        let idx = ch as usize;
         let curr = self.freqs[idx as usize];
         self.freqs[idx as usize] = f(curr);
     }
 
-    pub fn from(word: &AsciiStr) -> CharFreq {
-        let a = AsciiChar::A as u8;
-        let z = AsciiChar::Z as u8;
+    pub fn from(word: &NormalizedWord) -> CharFreq {
         let mut res = CharFreq::new_empty();
-        for ch in word.chars() {
-            let c8 = ch as u8;
-            if a <= c8 && c8 <= z {
-                res.update(ch, |x| x + 1);
-            }
+        for &ch in word.chars.iter() {
+            res.update(ch, |x| x + 1);
         }
         res
     }
@@ -100,13 +95,12 @@ pub enum CharFreqComparisonResult {
 
 #[cfg(test)]
 mod tests {
-    use crate::char_freq::CharFreq;
-    use crate::char_freq::CharFreqComparisonResult::*;
-    use ascii::AsciiStr;
+    use super::*;
+    use CharFreqComparisonResult::*;
 
     fn to_charfreq(word: &str) -> CharFreq {
-        let asc = AsciiStr::from_ascii(word).unwrap();
-        CharFreq::from(asc)
+        let asc = NormalizedWord::from_str(word);
+        CharFreq::from(&asc)
     }
 
     #[test]

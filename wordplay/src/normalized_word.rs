@@ -62,6 +62,24 @@ impl NormalizedWord {
     pub fn iter_chars<'a>(&'a self) -> std::slice::Iter<'a, NormalizedChar> {
         self.chars.iter()
     }
+
+    pub fn is_palindrome(self) -> bool {
+        if self.chars.len() == 0 {
+            return true;
+        }
+
+        let mut i = 0;
+        let mut j = self.chars.len() - 1;
+        while i < j {
+            if self.chars[i] != self.chars[j] {
+                return false;
+            }
+            i += 1;
+            j -= 1;
+        }
+
+        true
+    }
 }
 
 #[cfg(test)]
@@ -94,5 +112,65 @@ mod tests {
         let expected = NormalizedWord::new(vec![A, B, C]);
 
         assert_eq!(nw, expected);
+    }
+
+    fn mk(str: &str) -> NormalizedWord {
+        NormalizedWord::from_str(str)
+    }
+
+    #[test]
+    fn is_palindrome_returns_true_for_empty() {
+        let nw = mk("");
+
+        assert!(nw.is_palindrome())
+    }
+
+    #[test]
+    fn is_palindrome_returns_true_for_single() {
+        let nw = mk("A");
+
+        assert!(nw.is_palindrome())
+    }
+
+    #[test]
+    fn is_palindrome_returns_true_for_double() {
+        let nw = mk("AA");
+
+        assert!(nw.is_palindrome())
+    }
+
+    #[test]
+    fn is_palindrome_returns_true_for_triple() {
+        let nw = mk("AAA");
+
+        assert!(nw.is_palindrome())
+    }
+
+    #[test]
+    fn is_palindrome_returns_true_for_even() {
+        let nw = mk("ABBA");
+
+        assert!(nw.is_palindrome())
+    }
+
+    #[test]
+    fn is_palindrome_returns_true_for_odd() {
+        let nw = mk("ABA");
+
+        assert!(nw.is_palindrome())
+    }
+
+    #[test]
+    fn is_palindrome_returns_false_for_even() {
+        let nw = mk("ABBC");
+
+        assert!(!nw.is_palindrome())
+    }
+
+    #[test]
+    fn is_palindrome_returns_false_for_odd() {
+        let nw = mk("ABC");
+
+        assert!(!nw.is_palindrome())
     }
 }

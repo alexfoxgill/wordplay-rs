@@ -1,29 +1,29 @@
+use crate::char_map::CharMap;
 use crate::normalized_word::*;
+use strum::IntoEnumIterator;
 
 type UFreq = u8;
 
 #[derive(Debug, PartialEq)]
 pub struct CharFreq {
-    pub freqs: [UFreq; ALPHABET_SIZE],
+    freqs: CharMap<UFreq>,
 }
 
 impl CharFreq {
-    pub fn new(freqs: [UFreq; ALPHABET_SIZE]) -> CharFreq {
+    pub fn new(freqs: CharMap<UFreq>) -> CharFreq {
         CharFreq { freqs }
     }
 
     pub fn new_empty() -> CharFreq {
-        CharFreq {
-            freqs: [0; ALPHABET_SIZE],
-        }
+        CharFreq::new(Default::default())
     }
 
     pub fn get(&self, ch: NormalizedChar) -> UFreq {
-        self.freqs[ch as usize]
+        *self.freqs.get(ch)
     }
 
     pub fn set(&mut self, ch: NormalizedChar, value: UFreq) {
-        self.freqs[ch as usize] = value;
+        self.freqs.set(ch, value)
     }
 
     pub fn update(&mut self, ch: NormalizedChar, f: fn(UFreq) -> UFreq) {
@@ -41,10 +41,10 @@ impl CharFreq {
     pub fn compare(self, other: &CharFreq) -> CharFreqComparisonResult {
         use CharFreqComparison::*;
         let mut comp = Same;
-        let mut diff: [UFreq; ALPHABET_SIZE] = [0; ALPHABET_SIZE];
-        for i in 0..ALPHABET_SIZE {
-            let a = self.freqs[i];
-            let b = other.freqs[i];
+        let mut diff: CharMap<UFreq> = Default::default();
+        for i in NormalizedChar::iter() {
+            let a = self.freqs.get(i);
+            let b = other.freqs.get(i);
 
             if a == b {
                 continue;
@@ -57,7 +57,7 @@ impl CharFreq {
                 if comp == Same {
                     comp = Subset;
                 }
-                diff[i] = b - a;
+                diff.set(i, b - a);
             }
 
             if a > b {
@@ -67,7 +67,7 @@ impl CharFreq {
                 if comp == Same {
                     comp = Superset;
                 }
-                diff[i] = a - b;
+                diff.set(i, a - b);
             }
         }
 
@@ -102,6 +102,7 @@ pub enum CharFreqComparisonResult {
 mod tests {
     use super::*;
     use CharFreqComparisonResult::*;
+    use NormalizedChar::*;
 
     fn to_charfreq(word: &str) -> CharFreq {
         let asc = NormalizedWord::from_str(word);
@@ -112,7 +113,7 @@ mod tests {
     fn charfreq_counts_a_once() {
         let freqs = to_charfreq("A");
         let mut expected = CharFreq::new_empty();
-        expected.freqs[0] = 1;
+        expected.freqs.set(A, 1);
         assert_eq!(freqs, expected);
     }
 
@@ -120,7 +121,7 @@ mod tests {
     fn charfreq_counts_z_once() {
         let freqs = to_charfreq("Z");
         let mut expected = CharFreq::new_empty();
-        expected.freqs[25] = 1;
+        expected.freqs.set(Z, 1);
         assert_eq!(freqs, expected);
     }
 

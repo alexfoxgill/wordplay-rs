@@ -1,12 +1,14 @@
 use crate::normalized_word::*;
 
+type UFreq = u8;
+
 #[derive(Debug, PartialEq)]
 pub struct CharFreq {
-    pub freqs: [u8; 26],
+    pub freqs: [UFreq; 26],
 }
 
 impl CharFreq {
-    pub fn new(freqs: [u8; 26]) -> CharFreq {
+    pub fn new(freqs: [UFreq; 26]) -> CharFreq {
         CharFreq { freqs }
     }
 
@@ -14,12 +16,16 @@ impl CharFreq {
         CharFreq { freqs: [0; 26] }
     }
 
-    pub fn set(&mut self, ch: NormalizedChar, value: u8) {
+    pub fn get(&self, ch: NormalizedChar) -> UFreq {
+        self.freqs[ch as usize]
+    }
+
+    pub fn set(&mut self, ch: NormalizedChar, value: UFreq) {
         let idx = ch as usize;
         self.freqs[idx as usize] = value;
     }
 
-    pub fn update(&mut self, ch: NormalizedChar, f: fn(u8) -> u8) {
+    pub fn update(&mut self, ch: NormalizedChar, f: fn(UFreq) -> UFreq) {
         let idx = ch as usize;
         let curr = self.freqs[idx as usize];
         self.freqs[idx as usize] = f(curr);
@@ -36,7 +42,7 @@ impl CharFreq {
     pub fn compare(self, other: &CharFreq) -> CharFreqComparisonResult {
         use CharFreqComparison::*;
         let mut comp = Same;
-        let mut diff: [u8; 26] = [0; 26];
+        let mut diff: [UFreq; 26] = [0; 26];
         for i in 0..26 {
             let a = self.freqs[i];
             let b = other.freqs[i];

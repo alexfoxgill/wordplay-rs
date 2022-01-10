@@ -1,5 +1,6 @@
 use crate::char_map::CharMap;
 use crate::normalized_word::*;
+use std::collections::VecDeque;
 
 #[derive(Debug, PartialEq)]
 pub struct Trie<T> {
@@ -32,6 +33,10 @@ impl<T> Trie<T> {
         node.terminals.push(value)
     }
 
+    pub fn add_string(&mut self, str: &str, value: T) {
+        self.add(&NormalizedWord::from_str(str), value)
+    }
+
     pub fn get(&self, key: &NormalizedWord) -> Option<&Vec<T>> {
         let mut node: &Trie<T> = self;
         for &ch in key.iter_chars() {
@@ -44,6 +49,10 @@ impl<T> Trie<T> {
 
         Some(&node.terminals)
     }
+
+    pub fn iter(&self) -> impl Iterator<Item = (NormalizedWord, &T)> {
+        TrieIter::new(self)
+    }
 }
 
 impl<T> Default for Trie<T> {
@@ -55,6 +64,57 @@ impl<T> Default for Trie<T> {
     }
 }
 
+pub struct TrieIter<'a, T> {
+    current_word: NormalizedWord,
+    node_queue: VecDeque<(NormalizedWord, &'a Trie<T>)>,
+    terminal_iter: std::slice::Iter<'a, T>,
+}
+
+impl<'a, T> TrieIter<'a, T> {
+    fn new(root: &'a Trie<T>) -> TrieIter<'a, T> {
+        let mut node_queue: VecDeque<(NormalizedWord, &Trie<T>)> = Default::default();
+
+        for (char, child_opt) in root.children.iter() {
+            if let Some(child) = child_opt {
+                let word = NormalizedWord::new(vec![char]);
+                node_queue.push_back((word, child))
+            }
+        }
+
+        TrieIter {
+            current_word: Default::default(),
+            node_queue,
+            terminal_iter: root.terminals.iter(),
+        }
+    }
+}
+
+impl<'a, T> Iterator for TrieIter<'a, T> {
+    type Item = (NormalizedWord, &'a T);
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if let Some(term) = self.terminal_iter.next() {
+            return Some((self.current_word.clone(), term));
+        }
+
+        if let Some((word, node)) = self.node_queue.pop_front() {
+            self.current_word = word;
+            self.terminal_iter = node.terminals.iter();
+            for (char, child_opt) in node.children.iter() {
+                if let Some(child) = child_opt {
+                    let mut child_word = self.current_word.clone();
+                    child_word.push(char);
+                    self.node_queue.push_front((child_word, child))
+                }
+            }
+
+            return self.next();
+        }
+
+        return None;
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -63,7 +123,7 @@ mod tests {
     fn default_is_empty() {
         let trie: Trie<i32> = Default::default();
 
-        for child in trie.children.iter() {
+        for child in trie.children.iter_values() {
             assert_eq!(child, &None)
         }
 
@@ -93,5 +153,25 @@ mod tests {
         let res = trie.get(&nw);
 
         assert_eq!(res, Some(&vec![1, 2]))
+    }
+
+    #[test]
+    fn iterate() {
+        let mut trie: Trie<i32> = Default::default();
+
+        trie.add_string("A", 1);
+        trie.add_string("AB", 2);
+        trie.add_string("B", 3);
+
+        let res: Vec<_> = trie.iter().collect();
+
+        assert_eq!(
+            res,
+            vec![
+                (NormalizedWord::from_str("A"), &1),
+                (NormalizedWord::from_str("AB"), &2),
+                (NormalizedWord::from_str("B"), &3)
+            ]
+        )
     }
 }

@@ -60,7 +60,7 @@ impl NormalizedChar {
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct NormalizedWord {
     chars: Vec<NormalizedChar>,
 }
@@ -74,6 +74,10 @@ impl NormalizedWord {
         NormalizedWord {
             chars: str.chars().filter_map(NormalizedChar::from_char).collect(),
         }
+    }
+
+    pub fn push(&mut self, ch: NormalizedChar) {
+        self.chars.push(ch)
     }
 
     pub fn iter_chars<'a>(&'a self) -> std::slice::Iter<'a, NormalizedChar> {
@@ -96,6 +100,12 @@ impl NormalizedWord {
         }
 
         true
+    }
+}
+
+impl Default for NormalizedWord {
+    fn default() -> NormalizedWord {
+        NormalizedWord::new(Default::default())
     }
 }
 

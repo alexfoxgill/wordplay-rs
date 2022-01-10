@@ -18,7 +18,14 @@ impl<T> CharMap<T> {
         self.array[ch as usize] = t;
     }
 
-    pub fn iter(&self) -> std::slice::Iter<T> {
+    pub fn iter(&self) -> impl Iterator<Item = (NormalizedChar, &T)> {
+        self.array.iter().enumerate().map(|(char_int, value)| {
+            let char: NormalizedChar = num::FromPrimitive::from_usize(char_int).unwrap();
+            (char, value)
+        })
+    }
+
+    pub fn iter_values(&self) -> impl Iterator<Item = &T> {
         self.array.iter()
     }
 }
@@ -39,7 +46,7 @@ mod tests {
     fn initialises_empty() {
         let map: CharMap<i32> = Default::default();
 
-        map.array.iter().for_each(|&x| assert_eq!(x, 0));
+        map.iter_values().for_each(|&x| assert_eq!(x, 0));
     }
 
     #[test]

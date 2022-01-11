@@ -67,24 +67,18 @@ impl<T> Default for Trie<T> {
 pub struct TrieIter<'a, T> {
     current_word: NormalizedWord,
     node_queue: VecDeque<(NormalizedWord, &'a Trie<T>)>,
-    terminal_iter: std::slice::Iter<'a, T>,
+    terminal_queue: VecDeque<&'a T>,
 }
 
 impl<'a, T> TrieIter<'a, T> {
     fn new(root: &'a Trie<T>) -> TrieIter<'a, T> {
         let mut node_queue: VecDeque<(NormalizedWord, &Trie<T>)> = Default::default();
-
-        for (char, child_opt) in root.children.iter() {
-            if let Some(child) = child_opt {
-                let word = NormalizedWord::new(vec![char]);
-                node_queue.push_back((word, child))
-            }
-        }
+        node_queue.push_back((Default::default(), root));
 
         TrieIter {
             current_word: Default::default(),
             node_queue,
-            terminal_iter: root.terminals.iter(),
+            terminal_queue: Default::default(),
         }
     }
 }
@@ -93,20 +87,26 @@ impl<'a, T> Iterator for TrieIter<'a, T> {
     type Item = (NormalizedWord, &'a T);
 
     fn next(&mut self) -> Option<Self::Item> {
-        if let Some(term) = self.terminal_iter.next() {
+        if let Some(term) = self.terminal_queue.pop_front() {
             return Some((self.current_word.clone(), term));
         }
 
-        if let Some((word, node)) = self.node_queue.pop_front() {
-            self.current_word = word;
-            self.terminal_iter = node.terminals.iter();
-            for (char, child_opt) in node.children.iter() {
-                if let Some(child) = child_opt {
-                    let mut child_word = self.current_word.clone();
-                    child_word.push(char);
-                    self.node_queue.push_front((child_word, child))
+        if let Some((word, node)) = self.node_queue.pop_back() {
+            self.terminal_queue.extend(node.terminals.iter());
+
+            let nodes = node.children.iter_rev().filter_map(|(ch, node_opt)| {
+                if let Some(x) = node_opt {
+                    let mut child_word = word.clone();
+                    child_word.push(ch);
+                    Some((child_word, x.as_ref()))
+                } else {
+                    None
                 }
-            }
+            });
+
+            self.node_queue.extend(nodes);
+
+            self.current_word = word;
 
             return self.next();
         }

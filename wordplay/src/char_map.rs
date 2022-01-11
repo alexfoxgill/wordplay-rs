@@ -24,6 +24,16 @@ impl<T> CharMap<T> {
             (char, value)
         })
     }
+    pub fn iter_rev(&self) -> impl Iterator<Item = (NormalizedChar, &T)> {
+        self.array
+            .iter()
+            .enumerate()
+            .rev()
+            .map(|(char_int, value)| {
+                let char: NormalizedChar = num::FromPrimitive::from_usize(char_int).unwrap();
+                (char, value)
+            })
+    }
 
     pub fn iter_values(&self) -> impl Iterator<Item = &T> {
         self.array.iter()

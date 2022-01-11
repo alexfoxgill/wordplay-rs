@@ -76,6 +76,10 @@ impl NormalizedWord {
         }
     }
 
+    pub fn len(&self) -> usize {
+        self.chars.len()
+    }
+
     pub fn push(&mut self, ch: NormalizedChar) {
         self.chars.push(ch)
     }

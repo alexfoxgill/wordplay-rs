@@ -1,6 +1,7 @@
 use crate::char_map::CharMap;
 use crate::normalized_word::*;
 use std::collections::VecDeque;
+use std::ops::Range;
 
 #[derive(Debug, PartialEq)]
 pub struct Trie<T> {
@@ -51,7 +52,19 @@ impl<T> Trie<T> {
     }
 
     pub fn iter(&self) -> impl Iterator<Item = (NormalizedWord, &T)> {
-        TrieIter::new(self)
+        TrieIter::new(self, 0, usize::MAX)
+    }
+
+    pub fn iter_min(&self, min: usize) -> TrieIter<T> {
+        TrieIter::new(self, min, usize::MAX)
+    }
+
+    pub fn iter_max(&self, max: usize) -> TrieIter<T> {
+        TrieIter::new(self, 0, max)
+    }
+
+    pub fn iter_range(&self, min: usize, max: usize) -> TrieIter<T> {
+        TrieIter::new(self, min, max)
     }
 }
 
@@ -65,39 +78,46 @@ impl<T> Default for Trie<T> {
 }
 
 pub struct TrieIter<'a, T> {
-    current_word: NormalizedWord,
+    min_depth: usize,
+    max_depth: usize,
     node_queue: VecDeque<(NormalizedWord, &'a Trie<T>)>,
-    terminal_queue: VecDeque<&'a T>,
+    terminal_queue: VecDeque<(NormalizedWord, &'a T)>,
 }
 
 impl<'a, T> TrieIter<'a, T> {
-    fn new(root: &'a Trie<T>) -> TrieIter<'a, T> {
+    fn new(root: &'a Trie<T>, min_depth: usize, max_depth: usize) -> TrieIter<'a, T> {
         let mut node_queue: VecDeque<_> = Default::default();
         node_queue.push_back((Default::default(), root));
 
         TrieIter {
-            current_word: Default::default(),
+            min_depth,
+            max_depth,
             node_queue,
             terminal_queue: Default::default(),
         }
     }
 
     fn visit(&mut self, word: NormalizedWord, node: &'a Trie<T>) {
-        self.terminal_queue.extend(node.terminals.iter());
+        let depth = word.len();
 
-        let nodes = node.children.iter().rev().filter_map(|(ch, node_opt)| {
-            if let Some(x) = node_opt {
-                let mut child_word = word.clone();
-                child_word.push(ch);
-                Some((child_word, x.as_ref()))
-            } else {
-                None
-            }
-        });
+        if self.min_depth <= depth && depth <= self.max_depth {
+            self.terminal_queue
+                .extend(node.terminals.iter().map(|t| (word.clone(), t)));
+        }
 
-        self.node_queue.extend(nodes);
+        if depth < self.max_depth {
+            let nodes = node.children.iter().rev().filter_map(|(ch, node_opt)| {
+                if let Some(x) = node_opt {
+                    let mut child_word = word.clone();
+                    child_word.push(ch);
+                    Some((child_word, x.as_ref()))
+                } else {
+                    None
+                }
+            });
 
-        self.current_word = word;
+            self.node_queue.extend(nodes);
+        }
     }
 }
 
@@ -106,7 +126,7 @@ impl<'a, T> Iterator for TrieIter<'a, T> {
 
     fn next(&mut self) -> Option<Self::Item> {
         if let Some(term) = self.terminal_queue.pop_front() {
-            return Some((self.current_word.clone(), term));
+            return Some(term);
         }
 
         if let Some((word, node)) = self.node_queue.pop_back() {
@@ -211,5 +231,17 @@ mod tests {
                 (NormalizedWord::from_str("CDE"), &5),
             ]
         )
+    }
+
+    #[test]
+    fn iterate_bound() {
+        let mut trie: Trie<i32> = Default::default();
+
+        trie.add_string("A", 1);
+        trie.add_string("AB", 2);
+        trie.add_string("ABC", 3);
+        let res: Vec<_> = trie.iter_range(2, 2).collect();
+
+        assert_eq!(res, [(NormalizedWord::from_str("AB"), &2)])
     }
 }

@@ -159,7 +159,18 @@ mod tests {
     }
 
     #[test]
-    fn iterate() {
+    fn iterate_single() {
+        let mut trie: Trie<i32> = Default::default();
+
+        trie.add_string("A", 1);
+
+        let res: Vec<_> = trie.iter().collect();
+
+        assert_eq!(res, [(NormalizedWord::from_str("A"), &1),])
+    }
+
+    #[test]
+    fn iterate_multiple() {
         let mut trie: Trie<i32> = Default::default();
 
         trie.add_string("A", 1);
@@ -170,10 +181,34 @@ mod tests {
 
         assert_eq!(
             res,
-            vec![
+            [
                 (NormalizedWord::from_str("A"), &1),
                 (NormalizedWord::from_str("AB"), &2),
                 (NormalizedWord::from_str("B"), &3)
+            ]
+        )
+    }
+
+    #[test]
+    fn iterate_many() {
+        let mut trie: Trie<i32> = Default::default();
+
+        trie.add_string("A", 1);
+        trie.add_string("AB", 2);
+        trie.add_string("B", 3);
+        trie.add_string("CDE", 4);
+        trie.add_string("CDE", 5);
+
+        let res: Vec<_> = trie.iter().collect();
+
+        assert_eq!(
+            res,
+            [
+                (NormalizedWord::from_str("A"), &1),
+                (NormalizedWord::from_str("AB"), &2),
+                (NormalizedWord::from_str("B"), &3),
+                (NormalizedWord::from_str("CDE"), &4),
+                (NormalizedWord::from_str("CDE"), &5),
             ]
         )
     }

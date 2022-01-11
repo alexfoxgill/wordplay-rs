@@ -100,7 +100,7 @@ impl<'a, T> TrieIter<'a, T> {
     fn visit(&mut self, word: NormalizedWord, node: &'a Trie<T>) {
         let depth = word.len();
 
-        if self.min_depth <= depth && depth <= self.max_depth {
+        if self.min_depth <= depth {
             self.terminal_queue
                 .extend(node.terminals.iter().map(|t| (word.clone(), t)));
         }

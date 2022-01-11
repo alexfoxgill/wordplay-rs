@@ -72,7 +72,7 @@ pub struct TrieIter<'a, T> {
 
 impl<'a, T> TrieIter<'a, T> {
     fn new(root: &'a Trie<T>) -> TrieIter<'a, T> {
-        let mut node_queue: VecDeque<(NormalizedWord, &Trie<T>)> = Default::default();
+        let mut node_queue: VecDeque<_> = Default::default();
         node_queue.push_back((Default::default(), root));
 
         TrieIter {
@@ -85,7 +85,7 @@ impl<'a, T> TrieIter<'a, T> {
     fn visit(&mut self, word: NormalizedWord, node: &'a Trie<T>) {
         self.terminal_queue.extend(node.terminals.iter());
 
-        let nodes = node.children.iter_rev().filter_map(|(ch, node_opt)| {
+        let nodes = node.children.iter().rev().filter_map(|(ch, node_opt)| {
             if let Some(x) = node_opt {
                 let mut child_word = word.clone();
                 child_word.push(ch);

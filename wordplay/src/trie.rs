@@ -81,6 +81,24 @@ impl<'a, T> TrieIter<'a, T> {
             terminal_queue: Default::default(),
         }
     }
+
+    fn visit(&mut self, word: NormalizedWord, node: &'a Trie<T>) {
+        self.terminal_queue.extend(node.terminals.iter());
+
+        let nodes = node.children.iter_rev().filter_map(|(ch, node_opt)| {
+            if let Some(x) = node_opt {
+                let mut child_word = word.clone();
+                child_word.push(ch);
+                Some((child_word, x.as_ref()))
+            } else {
+                None
+            }
+        });
+
+        self.node_queue.extend(nodes);
+
+        self.current_word = word;
+    }
 }
 
 impl<'a, T> Iterator for TrieIter<'a, T> {
@@ -92,22 +110,7 @@ impl<'a, T> Iterator for TrieIter<'a, T> {
         }
 
         if let Some((word, node)) = self.node_queue.pop_back() {
-            self.terminal_queue.extend(node.terminals.iter());
-
-            let nodes = node.children.iter_rev().filter_map(|(ch, node_opt)| {
-                if let Some(x) = node_opt {
-                    let mut child_word = word.clone();
-                    child_word.push(ch);
-                    Some((child_word, x.as_ref()))
-                } else {
-                    None
-                }
-            });
-
-            self.node_queue.extend(nodes);
-
-            self.current_word = word;
-
+            self.visit(word, node);
             return self.next();
         }
 

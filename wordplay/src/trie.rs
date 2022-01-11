@@ -1,7 +1,7 @@
 use crate::char_map::CharMap;
 use crate::normalized_word::*;
 use std::collections::VecDeque;
-use std::ops::Range;
+use std::ops::RangeInclusive;
 
 #[derive(Debug, PartialEq)]
 pub struct Trie<T> {
@@ -63,8 +63,8 @@ impl<T> Trie<T> {
         TrieIter::new(self, 0, max)
     }
 
-    pub fn iter_range(&self, min: usize, max: usize) -> TrieIter<T> {
-        TrieIter::new(self, min, max)
+    pub fn iter_range(&self, range: RangeInclusive<usize>) -> TrieIter<T> {
+        TrieIter::new(self, *range.start(), *range.end())
     }
 }
 
@@ -240,7 +240,7 @@ mod tests {
         trie.add_string("A", 1);
         trie.add_string("AB", 2);
         trie.add_string("ABC", 3);
-        let res: Vec<_> = trie.iter_range(2, 2).collect();
+        let res: Vec<_> = trie.iter_range(2..=2).collect();
 
         assert_eq!(res, [(NormalizedWord::from_str("AB"), &2)])
     }

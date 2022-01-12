@@ -121,7 +121,7 @@ pub enum PrefixChar {
 impl From<char> for PrefixChar {
     fn from(ch: char) -> Self {
         match ch {
-            '?' => PrefixChar::Any,
+            ' ' | '.' | '?' => PrefixChar::Any,
             _ => PrefixChar::Only(NormalizedChar::from_char(ch).expect("Unknown search char")),
         }
     }

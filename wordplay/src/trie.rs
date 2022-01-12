@@ -52,19 +52,15 @@ impl<T> Trie<T> {
     }
 
     pub fn iter(&self) -> impl Iterator<Item = (NormalizedWord, &T)> {
-        TrieIter::new(self, 0, usize::MAX)
-    }
-
-    pub fn iter_min(&self, min: usize) -> TrieIter<T> {
-        TrieIter::new(self, min, usize::MAX)
-    }
-
-    pub fn iter_max(&self, max: usize) -> TrieIter<T> {
-        TrieIter::new(self, 0, max)
+        self.iter_range(0..=usize::MAX)
     }
 
     pub fn iter_range(&self, range: RangeInclusive<usize>) -> TrieIter<T> {
-        TrieIter::new(self, *range.start(), *range.end())
+        let search = TrieSearch {
+            min_depth: *range.start(),
+            max_depth: *range.end(),
+        };
+        TrieIter::new(self, search)
     }
 }
 
@@ -77,21 +73,35 @@ impl<T> Default for Trie<T> {
     }
 }
 
-pub struct TrieIter<'a, T> {
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct TrieSearch {
     min_depth: usize,
     max_depth: usize,
+}
+
+impl TrieSearch {
+    pub fn above_min(&self, depth: usize) -> bool {
+        self.min_depth <= depth
+    }
+
+    pub fn below_max(&self, depth: usize) -> bool {
+        depth < self.max_depth
+    }
+}
+
+pub struct TrieIter<'a, T> {
+    search: TrieSearch,
     node_queue: VecDeque<(NormalizedWord, &'a Trie<T>)>,
     terminal_queue: VecDeque<(NormalizedWord, &'a T)>,
 }
 
 impl<'a, T> TrieIter<'a, T> {
-    fn new(root: &'a Trie<T>, min_depth: usize, max_depth: usize) -> TrieIter<'a, T> {
+    fn new(root: &'a Trie<T>, search: TrieSearch) -> TrieIter<'a, T> {
         let mut node_queue: VecDeque<_> = Default::default();
         node_queue.push_back((Default::default(), root));
 
         TrieIter {
-            min_depth,
-            max_depth,
+            search,
             node_queue,
             terminal_queue: Default::default(),
         }
@@ -100,12 +110,12 @@ impl<'a, T> TrieIter<'a, T> {
     fn visit(&mut self, word: NormalizedWord, node: &'a Trie<T>) {
         let depth = word.len();
 
-        if self.min_depth <= depth {
+        if self.search.above_min(depth) {
             self.terminal_queue
                 .extend(node.terminals.iter().map(|t| (word.clone(), t)));
         }
 
-        if depth < self.max_depth {
+        if self.search.below_max(depth) {
             let nodes = node.children.iter().rev().filter_map(|(ch, node_opt)| {
                 if let Some(x) = node_opt {
                     let mut child_word = word.clone();

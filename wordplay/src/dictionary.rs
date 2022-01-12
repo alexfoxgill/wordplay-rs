@@ -1,14 +1,33 @@
 use crate::char_freq::CharFreq;
 use crate::normalized_word::NormalizedWord;
-use crate::trie::Trie;
+use crate::trie::{Trie, TrieSearch};
 
 use std::fs::File;
 use std::io::{BufRead, BufReader};
 use std::iter::FromIterator;
 
+#[derive(Debug, Clone, PartialEq)]
 pub struct DictEntry {
     pub char_freq: CharFreq,
     pub original: String,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+
+pub struct DictIterItem<'a> {
+    pub normalized: NormalizedWord,
+    pub char_freq: &'a CharFreq,
+    pub original: &'a String,
+}
+
+impl<'a> From<(NormalizedWord, &'a DictEntry)> for DictIterItem<'a> {
+    fn from((normalized, entry): (NormalizedWord, &'a DictEntry)) -> Self {
+        DictIterItem {
+            normalized,
+            char_freq: &entry.char_freq,
+            original: &entry.original,
+        }
+    }
 }
 
 #[derive(Default)]
@@ -17,8 +36,7 @@ pub struct Dictionary {
 }
 
 impl Dictionary {
-    pub fn from_file() -> Dictionary {
-        let file = File::open("data/enable.txt").unwrap();
+    pub fn from_file(file: File) -> Dictionary {
         let reader = BufReader::new(file);
         let lines = reader.lines().map(|l| l.unwrap());
         let mut dict: Dictionary = Default::default();
@@ -42,8 +60,12 @@ impl Dictionary {
         self.trie.get(word)
     }
 
-    pub fn iter(&self) -> impl Iterator<Item = (NormalizedWord, &DictEntry)> {
-        self.trie.iter()
+    pub fn iter(&self) -> impl Iterator<Item = DictIterItem> {
+        self.trie.iter().map(|x| x.into())
+    }
+
+    pub fn iter_search(&self, search: TrieSearch) -> impl Iterator<Item = DictIterItem> {
+        self.trie.iter_search(search).map(|x| x.into())
     }
 }
 
@@ -102,14 +124,5 @@ mod tests {
         let nw = NormalizedWord::from_str_safe("foo");
         let res = dict.find(&nw);
         assert!(res.is_some())
-    }
-
-    #[test]
-    #[ignore]
-    fn large_file() {
-        let dict = Dictionary::from_file();
-
-        // use the dict to shut clippy up
-        assert_eq!(dict.iter().count(), 0)
     }
 }

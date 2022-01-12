@@ -136,7 +136,7 @@ impl PrefixChar {
     }
 }
 
-#[derive(Debug, PartialEq, Default)]
+#[derive(Debug, PartialEq, Default, Clone)]
 pub struct TrieSearch {
     min_depth: Option<usize>,
     max_depth: Option<usize>,
@@ -144,6 +144,27 @@ pub struct TrieSearch {
 }
 
 impl TrieSearch {
+    pub fn from_prefix(str: &str) -> Self {
+        TrieSearch {
+            prefix: str.chars().map(PrefixChar::from).collect(),
+            ..Default::default()
+        }
+    }
+
+    pub fn with_min(&self, min: usize) -> Self {
+        TrieSearch {
+            min_depth: Some(min),
+            ..self.clone()
+        }
+    }
+
+    pub fn with_max(&self, max: usize) -> Self {
+        TrieSearch {
+            max_depth: Some(max),
+            ..self.clone()
+        }
+    }
+
     pub fn above_min(&self, depth: usize) -> bool {
         self.min_depth.map_or(true, |m| m <= depth)
     }
@@ -314,12 +335,7 @@ mod tests {
     fn iterate_prefix_search() {
         let trie = Trie::from_iter(vec![("BAT", ()), ("CAR", ()), ("CAT", ())]);
 
-        let prefix = "CA".chars().map(PrefixChar::from).collect();
-
-        let search = TrieSearch {
-            prefix,
-            ..Default::default()
-        };
+        let search = TrieSearch::from_prefix("CA");
         let res: Vec<_> = trie.iter_search(search).collect();
 
         assert_eq!(res, [("CAR".into(), &()), ("CAT".into(), &())])
@@ -329,12 +345,7 @@ mod tests {
     fn iterate_prefix_exclude_shorter() {
         let trie = Trie::from_iter(vec![("C", ()), ("CAR", ())]);
 
-        let prefix = "CA".chars().map(PrefixChar::from).collect();
-
-        let search = TrieSearch {
-            prefix,
-            ..Default::default()
-        };
+        let search = TrieSearch::from_prefix("CA");
         let res: Vec<_> = trie.iter_search(search).collect();
 
         assert_eq!(res, [("CAR".into(), &()),])
@@ -344,12 +355,7 @@ mod tests {
     fn iterate_wildcard_match() {
         let trie = Trie::from_iter(vec![("BAT", ()), ("CAR", ()), ("COT", ())]);
 
-        let prefix = "?A".chars().map(PrefixChar::from).collect();
-
-        let search = TrieSearch {
-            prefix,
-            ..Default::default()
-        };
+        let search = TrieSearch::from_prefix("?A");
         let res: Vec<_> = trie.iter_search(search).collect();
 
         assert_eq!(res, [("BAT".into(), &()), ("CAR".into(), &())])

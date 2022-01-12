@@ -4,7 +4,7 @@ use strum::IntoEnumIterator;
 
 type UFreq = u8;
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct CharFreq {
     freqs: CharMap<UFreq>,
 }

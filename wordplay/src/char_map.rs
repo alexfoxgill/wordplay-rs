@@ -1,6 +1,6 @@
 use crate::normalized_word::NormalizedChar;
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct CharMap<T> {
     array: [T; 26],
 }

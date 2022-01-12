@@ -35,6 +35,10 @@ pub enum NormalizedChar {
 pub const ALPHABET_SIZE: usize = 26;
 
 impl NormalizedChar {
+    pub fn all() -> impl Iterator<Item = NormalizedChar> {
+        NormalizedChar::iter()
+    }
+
     pub fn from_char(ch: char) -> Option<NormalizedChar> {
         let ascii_ch = ch.to_ascii_uppercase();
         if 'A' <= ascii_ch && ascii_ch <= 'Z' {
@@ -234,7 +238,7 @@ mod tests {
 
     #[test]
     fn chars_can_be_iterated() {
-        let len = NormalizedChar::iter().len();
+        let len = NormalizedChar::all().count();
 
         assert_eq!(len, ALPHABET_SIZE)
     }

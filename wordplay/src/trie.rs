@@ -328,7 +328,7 @@ mod tests {
     fn iterate_prefix_search() {
         let trie = Trie::from_iter(vec![("BAT", ()), ("CAR", ()), ("CAT", ())]);
 
-        let prefix = vec!['C', 'A'].into_iter().map(PrefixChar::from).collect();
+        let prefix = "CA".chars().map(PrefixChar::from).collect();
 
         let search = TrieSearch {
             prefix,
@@ -343,7 +343,7 @@ mod tests {
     fn iterate_prefix_exclude_shorter() {
         let trie = Trie::from_iter(vec![("C", ()), ("CAR", ())]);
 
-        let prefix = vec!['C', 'A'].into_iter().map(PrefixChar::from).collect();
+        let prefix = "CA".chars().map(PrefixChar::from).collect();
 
         let search = TrieSearch {
             prefix,
@@ -352,5 +352,20 @@ mod tests {
         let res: Vec<_> = trie.iter_search(search).collect();
 
         assert_eq!(res, [("CAR".into(), &()),])
+    }
+
+    #[test]
+    fn iterate_wildcard_match() {
+        let trie = Trie::from_iter(vec![("BAT", ()), ("CAR", ()), ("COT", ())]);
+
+        let prefix = "?A".chars().map(PrefixChar::from).collect();
+
+        let search = TrieSearch {
+            prefix,
+            ..Default::default()
+        };
+        let res: Vec<_> = trie.iter_search(search).collect();
+
+        assert_eq!(res, [("BAT".into(), &()), ("CAR".into(), &())])
     }
 }

@@ -1,6 +1,8 @@
 use crate::char_map::CharMap;
 use crate::normalized_word::*;
 use std::collections::VecDeque;
+use std::iter::FromIterator;
+use std::iter::IntoIterator;
 use std::ops::RangeInclusive;
 
 #[derive(Debug, PartialEq)]
@@ -59,8 +61,45 @@ impl<T> Trie<T> {
         let search = TrieSearch {
             min_depth: Some(*range.start()),
             max_depth: Some(*range.end()),
+            ..Default::default()
         };
         TrieIter::new(self, search)
+    }
+
+    pub fn iter_search(&self, search: TrieSearch) -> TrieIter<T> {
+        TrieIter::new(self, search)
+    }
+}
+
+impl<'a, T> Extend<(&'a NormalizedWord, T)> for Trie<T> {
+    fn extend<It: IntoIterator<Item = (&'a NormalizedWord, T)>>(&mut self, iter: It) {
+        for (nw, v) in iter {
+            self.add(nw, v);
+        }
+    }
+}
+
+impl<'a, T> FromIterator<(&'a NormalizedWord, T)> for Trie<T> {
+    fn from_iter<It: IntoIterator<Item = (&'a NormalizedWord, T)>>(iter: It) -> Self {
+        let mut trie: Trie<T> = Default::default();
+        trie.extend(iter);
+        trie
+    }
+}
+
+impl<'a, T> Extend<(&'a str, T)> for Trie<T> {
+    fn extend<It: IntoIterator<Item = (&'a str, T)>>(&mut self, iter: It) {
+        for (nw, v) in iter {
+            self.add_string(nw, v);
+        }
+    }
+}
+
+impl<'a, T> FromIterator<(&'a str, T)> for Trie<T> {
+    fn from_iter<It: IntoIterator<Item = (&'a str, T)>>(iter: It) -> Self {
+        let mut trie: Trie<T> = Default::default();
+        trie.extend(iter);
+        trie
     }
 }
 
@@ -73,10 +112,26 @@ impl<T> Default for Trie<T> {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, PartialEq, Copy, Clone)]
+pub enum PrefixChar {
+    Only(NormalizedChar),
+    Any,
+}
+
+impl PrefixChar {
+    pub fn matches(&self, ch: &NormalizedChar) -> bool {
+        match self {
+            PrefixChar::Only(exp) => exp == ch,
+            PrefixChar::Any => true,
+        }
+    }
+}
+
+#[derive(Debug, PartialEq)]
 pub struct TrieSearch {
     min_depth: Option<usize>,
     max_depth: Option<usize>,
+    prefix: Vec<PrefixChar>,
 }
 
 impl TrieSearch {
@@ -87,6 +142,14 @@ impl TrieSearch {
     pub fn below_max(&self, depth: usize) -> bool {
         self.max_depth.map_or(true, |m| depth < m)
     }
+
+    pub fn get_char_restriction(&self, depth: usize) -> PrefixChar {
+        if depth < self.prefix.len() {
+            self.prefix[depth]
+        } else {
+            PrefixChar::Any
+        }
+    }
 }
 
 impl Default for TrieSearch {
@@ -94,6 +157,7 @@ impl Default for TrieSearch {
         TrieSearch {
             min_depth: None,
             max_depth: None,
+            prefix: vec![],
         }
     }
 }
@@ -119,21 +183,30 @@ impl<'a, T> TrieIter<'a, T> {
     fn visit(&mut self, word: NormalizedWord, node: &'a Trie<T>) {
         let depth = word.len();
 
-        if self.search.above_min(depth) {
+        let prefix_len = self.search.prefix.len();
+
+        if prefix_len <= depth && self.search.above_min(depth) {
             self.terminal_queue
                 .extend(node.terminals.iter().map(|t| (word.clone(), t)));
         }
 
         if self.search.below_max(depth) {
-            let nodes = node.children.iter().rev().filter_map(|(ch, node_opt)| {
-                if let Some(x) = node_opt {
-                    let mut child_word = word.clone();
-                    child_word.push(ch);
-                    Some((child_word, x.as_ref()))
-                } else {
-                    None
-                }
-            });
+            let char_restriction = self.search.get_char_restriction(depth);
+
+            let nodes = node
+                .children
+                .iter()
+                .filter(|(ch, _)| char_restriction.matches(ch))
+                .filter_map(|(ch, node_opt)| {
+                    if let Some(x) = node_opt {
+                        let mut child_word = word.clone();
+                        child_word.push(ch);
+                        Some((child_word, x.as_ref()))
+                    } else {
+                        None
+                    }
+                })
+                .rev();
 
             self.node_queue.extend(nodes);
         }
@@ -199,9 +272,7 @@ mod tests {
 
     #[test]
     fn iterate_single() {
-        let mut trie: Trie<i32> = Default::default();
-
-        trie.add_string("A", 1);
+        let trie = Trie::from_iter(vec![("A", 1)]);
 
         let res: Vec<_> = trie.iter().collect();
 
@@ -210,11 +281,7 @@ mod tests {
 
     #[test]
     fn iterate_multiple() {
-        let mut trie: Trie<i32> = Default::default();
-
-        trie.add_string("A", 1);
-        trie.add_string("AB", 2);
-        trie.add_string("B", 3);
+        let trie = Trie::from_iter(vec![("A", 1), ("AB", 2), ("B", 3)]);
 
         let res: Vec<_> = trie.iter().collect();
 
@@ -230,13 +297,7 @@ mod tests {
 
     #[test]
     fn iterate_many() {
-        let mut trie: Trie<i32> = Default::default();
-
-        trie.add_string("A", 1);
-        trie.add_string("AB", 2);
-        trie.add_string("B", 3);
-        trie.add_string("CDE", 4);
-        trie.add_string("CDE", 5);
+        let trie = Trie::from_iter(vec![("A", 1), ("AB", 2), ("B", 3), ("CDE", 4), ("CDE", 5)]);
 
         let res: Vec<_> = trie.iter().collect();
 
@@ -254,13 +315,33 @@ mod tests {
 
     #[test]
     fn iterate_bound() {
-        let mut trie: Trie<i32> = Default::default();
+        let trie = Trie::from_iter(vec![("A", 1), ("AB", 2), ("ABC", 3)]);
 
-        trie.add_string("A", 1);
-        trie.add_string("AB", 2);
-        trie.add_string("ABC", 3);
         let res: Vec<_> = trie.iter_range(2..=2).collect();
 
         assert_eq!(res, [(NormalizedWord::from_str("AB"), &2)])
+    }
+
+    #[test]
+    fn iterate_prefix_search() {
+        let trie = Trie::from_iter(vec![("BAT", ()), ("C", ()), ("CAR", ()), ("CAT", ())]);
+
+        let prefix = vec![
+            PrefixChar::Only(NormalizedChar::C),
+            PrefixChar::Only(NormalizedChar::A),
+        ];
+        let search = TrieSearch {
+            prefix,
+            ..Default::default()
+        };
+        let res: Vec<_> = trie.iter_search(search).collect();
+
+        assert_eq!(
+            res,
+            [
+                (NormalizedWord::from_str("CAR"), &()),
+                (NormalizedWord::from_str("CAT"), &())
+            ]
+        )
     }
 }

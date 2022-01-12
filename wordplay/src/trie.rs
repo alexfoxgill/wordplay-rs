@@ -247,11 +247,7 @@ mod tests {
     fn default_is_empty() {
         let trie: Trie<i32> = Default::default();
 
-        for child in trie.children.iter_values() {
-            assert_eq!(child, &None)
-        }
-
-        assert_eq!(trie.terminals.len(), 0)
+        assert_eq!(trie.iter().count(), 0)
     }
 
     #[test]

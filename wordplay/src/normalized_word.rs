@@ -107,6 +107,12 @@ impl NormalizedWord {
     }
 }
 
+impl From<&str> for NormalizedWord {
+    fn from(str: &str) -> Self {
+        NormalizedWord::from_str(str)
+    }
+}
+
 impl Default for NormalizedWord {
     fn default() -> NormalizedWord {
         NormalizedWord::new(Default::default())

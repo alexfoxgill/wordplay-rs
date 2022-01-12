@@ -118,6 +118,15 @@ pub enum PrefixChar {
     Any,
 }
 
+impl From<char> for PrefixChar {
+    fn from(ch: char) -> Self {
+        match ch {
+            '?' => PrefixChar::Any,
+            _ => PrefixChar::Only(NormalizedChar::from_char(ch).expect("Unknown search char")),
+        }
+    }
+}
+
 impl PrefixChar {
     pub fn matches(&self, ch: &NormalizedChar) -> bool {
         match self {
@@ -249,7 +258,7 @@ mod tests {
     fn add_single() {
         let mut trie: Trie<i32> = Default::default();
 
-        let nw = NormalizedWord::from_str("ABC");
+        let nw = "ABC".into();
         trie.add(&nw, 1);
 
         let res = trie.get(&nw);
@@ -261,7 +270,7 @@ mod tests {
     fn add_multiple() {
         let mut trie: Trie<i32> = Default::default();
 
-        let nw = NormalizedWord::from_str("ABC");
+        let nw = "ABC".into();
         trie.add(&nw, 1);
         trie.add(&nw, 2);
 
@@ -276,7 +285,7 @@ mod tests {
 
         let res: Vec<_> = trie.iter().collect();
 
-        assert_eq!(res, [(NormalizedWord::from_str("A"), &1),])
+        assert_eq!(res, [("A".into(), &1),])
     }
 
     #[test]
@@ -285,14 +294,7 @@ mod tests {
 
         let res: Vec<_> = trie.iter().collect();
 
-        assert_eq!(
-            res,
-            [
-                (NormalizedWord::from_str("A"), &1),
-                (NormalizedWord::from_str("AB"), &2),
-                (NormalizedWord::from_str("B"), &3)
-            ]
-        )
+        assert_eq!(res, [("A".into(), &1), ("AB".into(), &2), ("B".into(), &3)])
     }
 
     #[test]
@@ -304,11 +306,11 @@ mod tests {
         assert_eq!(
             res,
             [
-                (NormalizedWord::from_str("A"), &1),
-                (NormalizedWord::from_str("AB"), &2),
-                (NormalizedWord::from_str("B"), &3),
-                (NormalizedWord::from_str("CDE"), &4),
-                (NormalizedWord::from_str("CDE"), &5),
+                ("A".into(), &1),
+                ("AB".into(), &2),
+                ("B".into(), &3),
+                ("CDE".into(), &4),
+                ("CDE".into(), &5),
             ]
         )
     }
@@ -319,29 +321,36 @@ mod tests {
 
         let res: Vec<_> = trie.iter_range(2..=2).collect();
 
-        assert_eq!(res, [(NormalizedWord::from_str("AB"), &2)])
+        assert_eq!(res, [("AB".into(), &2)])
     }
 
     #[test]
     fn iterate_prefix_search() {
-        let trie = Trie::from_iter(vec![("BAT", ()), ("C", ()), ("CAR", ()), ("CAT", ())]);
+        let trie = Trie::from_iter(vec![("BAT", ()), ("CAR", ()), ("CAT", ())]);
 
-        let prefix = vec![
-            PrefixChar::Only(NormalizedChar::C),
-            PrefixChar::Only(NormalizedChar::A),
-        ];
+        let prefix = vec!['C', 'A'].into_iter().map(PrefixChar::from).collect();
+
         let search = TrieSearch {
             prefix,
             ..Default::default()
         };
         let res: Vec<_> = trie.iter_search(search).collect();
 
-        assert_eq!(
-            res,
-            [
-                (NormalizedWord::from_str("CAR"), &()),
-                (NormalizedWord::from_str("CAT"), &())
-            ]
-        )
+        assert_eq!(res, [("CAR".into(), &()), ("CAT".into(), &())])
+    }
+
+    #[test]
+    fn iterate_prefix_exclude_shorter() {
+        let trie = Trie::from_iter(vec![("C", ()), ("CAR", ())]);
+
+        let prefix = vec!['C', 'A'].into_iter().map(PrefixChar::from).collect();
+
+        let search = TrieSearch {
+            prefix,
+            ..Default::default()
+        };
+        let res: Vec<_> = trie.iter_search(search).collect();
+
+        assert_eq!(res, [("CAR".into(), &()),])
     }
 }

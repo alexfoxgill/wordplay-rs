@@ -1,3 +1,9 @@
+[workspace]
+
+members = [
+    "wordplay",
+]
+
 [package]
 name = "wordplay_api"
 version = "0.1.0"

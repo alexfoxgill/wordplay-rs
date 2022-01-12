@@ -52,13 +52,13 @@ impl<T> Trie<T> {
     }
 
     pub fn iter(&self) -> impl Iterator<Item = (NormalizedWord, &T)> {
-        self.iter_range(0..=usize::MAX)
+        TrieIter::new(self, Default::default())
     }
 
     pub fn iter_range(&self, range: RangeInclusive<usize>) -> TrieIter<T> {
         let search = TrieSearch {
-            min_depth: *range.start(),
-            max_depth: *range.end(),
+            min_depth: Some(*range.start()),
+            max_depth: Some(*range.end()),
         };
         TrieIter::new(self, search)
     }
@@ -75,17 +75,26 @@ impl<T> Default for Trie<T> {
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct TrieSearch {
-    min_depth: usize,
-    max_depth: usize,
+    min_depth: Option<usize>,
+    max_depth: Option<usize>,
 }
 
 impl TrieSearch {
     pub fn above_min(&self, depth: usize) -> bool {
-        self.min_depth <= depth
+        self.min_depth.map_or(true, |m| m <= depth)
     }
 
     pub fn below_max(&self, depth: usize) -> bool {
-        depth < self.max_depth
+        self.max_depth.map_or(true, |m| depth < m)
+    }
+}
+
+impl Default for TrieSearch {
+    fn default() -> TrieSearch {
+        TrieSearch {
+            min_depth: None,
+            max_depth: None,
+        }
     }
 }
 

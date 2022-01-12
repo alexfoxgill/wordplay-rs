@@ -37,7 +37,7 @@ impl<T> Trie<T> {
     }
 
     pub fn add_string(&mut self, str: &str, value: T) {
-        self.add(&NormalizedWord::from_str(str), value)
+        self.add(&NormalizedWord::from_str_safe(str), value)
     }
 
     pub fn get(&self, key: &NormalizedWord) -> Option<&Vec<T>> {
@@ -136,7 +136,7 @@ impl PrefixChar {
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Default)]
 pub struct TrieSearch {
     min_depth: Option<usize>,
     max_depth: Option<usize>,
@@ -157,16 +157,6 @@ impl TrieSearch {
             self.prefix[depth]
         } else {
             PrefixChar::Any
-        }
-    }
-}
-
-impl Default for TrieSearch {
-    fn default() -> TrieSearch {
-        TrieSearch {
-            min_depth: None,
-            max_depth: None,
-            prefix: vec![],
         }
     }
 }
@@ -235,7 +225,7 @@ impl<'a, T> Iterator for TrieIter<'a, T> {
             return self.next();
         }
 
-        return None;
+        None
     }
 }
 

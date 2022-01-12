@@ -105,7 +105,7 @@ mod tests {
     use NormalizedChar::*;
 
     fn to_charfreq(word: &str) -> CharFreq {
-        let asc = NormalizedWord::from_str(word);
+        let asc = NormalizedWord::from_str_safe(word);
         CharFreq::from(&asc)
     }
 

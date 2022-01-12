@@ -11,6 +11,7 @@ pub struct DictEntry {
     pub original: String,
 }
 
+#[derive(Default)]
 pub struct Dictionary {
     trie: Trie<DictEntry>,
 }
@@ -28,7 +29,7 @@ impl Dictionary {
     }
 
     pub fn insert(&mut self, original: &str) {
-        let normalized = NormalizedWord::from_str(original);
+        let normalized = NormalizedWord::from_str_safe(original);
         let char_freq = CharFreq::from(&normalized);
         let entry = DictEntry {
             char_freq,
@@ -43,14 +44,6 @@ impl Dictionary {
 
     pub fn iter(&self) -> impl Iterator<Item = (NormalizedWord, &DictEntry)> {
         self.trie.iter()
-    }
-}
-
-impl Default for Dictionary {
-    fn default() -> Dictionary {
-        Dictionary {
-            trie: Default::default(),
-        }
     }
 }
 
@@ -79,7 +72,7 @@ mod tests {
         let mut dict: Dictionary = Default::default();
         dict.insert("test");
 
-        let nw = NormalizedWord::from_str("test");
+        let nw = NormalizedWord::from_str_safe("test");
         let res = dict.find(&nw);
         assert!(res.is_some())
     }
@@ -89,11 +82,11 @@ mod tests {
         let mut dict: Dictionary = Default::default();
         dict.extend(vec!["test", "foo"]);
 
-        let nw = NormalizedWord::from_str("test");
+        let nw = NormalizedWord::from_str_safe("test");
         let res = dict.find(&nw);
         assert!(res.is_some());
 
-        let nw = NormalizedWord::from_str("foo");
+        let nw = NormalizedWord::from_str_safe("foo");
         let res = dict.find(&nw);
         assert!(res.is_some())
     }
@@ -102,11 +95,11 @@ mod tests {
     fn from_iter() {
         let dict = Dictionary::from_iter(vec!["test", "foo"]);
 
-        let nw = NormalizedWord::from_str("test");
+        let nw = NormalizedWord::from_str_safe("test");
         let res = dict.find(&nw);
         assert!(res.is_some());
 
-        let nw = NormalizedWord::from_str("foo");
+        let nw = NormalizedWord::from_str_safe("foo");
         let res = dict.find(&nw);
         assert!(res.is_some())
     }

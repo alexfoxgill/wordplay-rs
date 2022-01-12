@@ -1,3 +1,5 @@
+use std::slice::Iter;
+
 use strum::IntoEnumIterator;
 use strum_macros::EnumIter;
 
@@ -41,8 +43,8 @@ impl NormalizedChar {
 
     pub fn from_char(ch: char) -> Option<NormalizedChar> {
         let ascii_ch = ch.to_ascii_uppercase();
-        if 'A' <= ascii_ch && ascii_ch <= 'Z' {
-            let u8_ch = (ascii_ch as u8) - ('A' as u8);
+        if ('A'..='Z').contains(&ascii_ch) {
+            let u8_ch = (ascii_ch as u8) - b'A';
             return num::FromPrimitive::from_u8(u8_ch);
         }
 
@@ -74,7 +76,7 @@ impl NormalizedWord {
         NormalizedWord { chars }
     }
 
-    pub fn from_str(str: &str) -> NormalizedWord {
+    pub fn from_str_safe(str: &str) -> NormalizedWord {
         NormalizedWord {
             chars: str.chars().filter_map(NormalizedChar::from_char).collect(),
         }
@@ -84,16 +86,20 @@ impl NormalizedWord {
         self.chars.len()
     }
 
+    pub fn is_empty(&self) -> bool {
+        self.len() == 0
+    }
+
     pub fn push(&mut self, ch: NormalizedChar) {
         self.chars.push(ch)
     }
 
-    pub fn iter_chars<'a>(&'a self) -> std::slice::Iter<'a, NormalizedChar> {
+    pub fn iter_chars(&self) -> Iter<NormalizedChar> {
         self.chars.iter()
     }
 
     pub fn is_palindrome(self) -> bool {
-        if self.chars.len() == 0 {
+        if self.is_empty() {
             return true;
         }
 
@@ -113,7 +119,7 @@ impl NormalizedWord {
 
 impl From<&str> for NormalizedWord {
     fn from(str: &str) -> Self {
-        NormalizedWord::from_str(str)
+        NormalizedWord::from_str_safe(str)
     }
 }
 
@@ -130,7 +136,7 @@ mod tests {
 
     #[test]
     fn creates_from_ascii_uppercase() {
-        let nw = NormalizedWord::from_str("ABC");
+        let nw = NormalizedWord::from_str_safe("ABC");
 
         let expected = NormalizedWord::new(vec![A, B, C]);
 
@@ -139,7 +145,7 @@ mod tests {
 
     #[test]
     fn creates_from_ascii_lowercase() {
-        let nw = NormalizedWord::from_str("abc");
+        let nw = NormalizedWord::from_str_safe("abc");
 
         let expected = NormalizedWord::new(vec![A, B, C]);
 
@@ -148,7 +154,7 @@ mod tests {
 
     #[test]
     fn ignores_non_letters() {
-        let nw = NormalizedWord::from_str("A1B2C3");
+        let nw = NormalizedWord::from_str_safe("A1B2C3");
 
         let expected = NormalizedWord::new(vec![A, B, C]);
 
@@ -170,14 +176,14 @@ mod tests {
         .iter()
         .for_each(|(str, expected)| {
             assert_eq!(
-                NormalizedWord::from_str(str),
-                NormalizedWord::from_str(expected)
+                NormalizedWord::from_str_safe(str),
+                NormalizedWord::from_str_safe(expected)
             )
         })
     }
 
     fn mk(str: &str) -> NormalizedWord {
-        NormalizedWord::from_str(str)
+        NormalizedWord::from_str_safe(str)
     }
 
     #[test]

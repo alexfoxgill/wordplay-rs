@@ -7,8 +7,8 @@ use std::io::{BufRead, BufReader};
 use std::iter::FromIterator;
 
 pub struct DictEntry {
-    char_freq: CharFreq,
-    original: String,
+    pub char_freq: CharFreq,
+    pub original: String,
 }
 
 pub struct Dictionary {
@@ -16,6 +16,17 @@ pub struct Dictionary {
 }
 
 impl Dictionary {
+    pub fn from_file() -> Dictionary {
+        let file = File::open("data/enable.txt").unwrap();
+        let reader = BufReader::new(file);
+        let lines = reader.lines().map(|l| l.unwrap());
+        let mut dict: Dictionary = Default::default();
+        for line in lines {
+            dict.insert(&line);
+        }
+        dict
+    }
+
     pub fn insert(&mut self, original: &str) {
         let normalized = NormalizedWord::from_str(original);
         let char_freq = CharFreq::from(&normalized);
@@ -100,14 +111,12 @@ mod tests {
         assert!(res.is_some())
     }
 
-    // #[test]
+    #[test]
+    #[ignore]
     fn large_file() {
-        let file = File::open("data/enable.txt").unwrap();
-        let mut reader = BufReader::new(file);
-        let lines = reader.lines().map(|l| l.unwrap());
-        let mut dict: Dictionary = Default::default();
-        for line in lines {
-            dict.insert(&line);
-        }
+        let dict = Dictionary::from_file();
+
+        // use the dict to shut clippy up
+        assert_eq!(dict.iter().count(), 0)
     }
 }

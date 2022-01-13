@@ -6,6 +6,10 @@ pub struct CharMap<T> {
 }
 
 impl<T> CharMap<T> {
+    pub const fn new(array: [T; 26]) -> Self {
+        CharMap { array }
+    }
+
     pub fn get(&self, ch: NormalizedChar) -> &T {
         &self.array[ch as usize]
     }

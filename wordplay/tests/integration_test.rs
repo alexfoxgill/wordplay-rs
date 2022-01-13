@@ -25,3 +25,10 @@ fn find_matching_words() {
 
     assert!(iter.any(|x| x == "banana"));
 }
+
+#[test]
+fn all_words_have_anagram_num() {
+    for x in DICT.iter() {
+        assert!(x.anag_num.is_some());
+    }
+}

@@ -59,10 +59,10 @@ const PRIMES_MAP: CharMap<UnsignedAnag> = CharMap::new([
 #[derive(Debug, PartialEq)]
 pub struct AnagramNumberOverflow;
 
-impl TryFrom<NormalizedWord> for AnagramNumber {
+impl<'a> TryFrom<&'a NormalizedWord> for AnagramNumber {
     type Error = AnagramNumberOverflow;
 
-    fn try_from(word: NormalizedWord) -> Result<Self, Self::Error> {
+    fn try_from(word: &'a NormalizedWord) -> Result<Self, Self::Error> {
         let mut x: UnsignedAnag = 1;
         for &c in word.iter_chars() {
             x = x
@@ -80,7 +80,7 @@ mod tests {
     use AnagramComparison::*;
 
     fn get_anag_num(str: &str) -> AnagramNumber {
-        NormalizedWord::from_str_safe(str).try_into().unwrap()
+        (&NormalizedWord::from_str_safe(str)).try_into().unwrap()
     }
 
     #[test]
@@ -133,7 +133,7 @@ mod tests {
     #[test]
     fn worst_case_twenty_letter_word_unsupported() {
         let n: Result<AnagramNumber, _> =
-            NormalizedWord::from_str_safe("zzzzzzzzzzzzzzzzzzzz").try_into();
+            (&NormalizedWord::from_str_safe("zzzzzzzzzzzzzzzzzzzz")).try_into();
 
         assert_eq!(n, Err(AnagramNumberOverflow))
     }

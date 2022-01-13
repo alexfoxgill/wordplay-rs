@@ -1,7 +1,8 @@
+use crate::anagram_number::AnagramNumber;
 use crate::char_freq::CharFreq;
 use crate::normalized_word::NormalizedWord;
 use crate::trie::{Trie, TrieSearch};
-
+use std::convert::TryFrom;
 use std::fs::File;
 use std::io::{BufRead, BufReader};
 use std::iter::FromIterator;
@@ -9,6 +10,7 @@ use std::iter::FromIterator;
 #[derive(Debug, Clone, PartialEq)]
 pub struct DictEntry {
     pub char_freq: CharFreq,
+    pub anag_num: Option<AnagramNumber>,
     pub original: String,
 }
 
@@ -17,6 +19,7 @@ pub struct DictEntry {
 pub struct DictIterItem<'a> {
     pub normalized: NormalizedWord,
     pub char_freq: &'a CharFreq,
+    pub anag_num: Option<AnagramNumber>,
     pub original: &'a String,
 }
 
@@ -25,6 +28,7 @@ impl<'a> From<(NormalizedWord, &'a DictEntry)> for DictIterItem<'a> {
         DictIterItem {
             normalized,
             char_freq: &entry.char_freq,
+            anag_num: entry.anag_num,
             original: &entry.original,
         }
     }
@@ -49,8 +53,10 @@ impl Dictionary {
     pub fn insert(&mut self, original: &str) {
         let normalized = NormalizedWord::from_str_safe(original);
         let char_freq = CharFreq::from(&normalized);
+        let anag_num = AnagramNumber::try_from(&normalized).ok();
         let entry = DictEntry {
             char_freq,
+            anag_num,
             original: String::from(original),
         };
         self.trie.add(&normalized, entry);

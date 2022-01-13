@@ -1,3 +1,4 @@
 Run benchmarks: `cargo bench`
 Run tests: `cargo test`
-Watch tests: `cargo watch -x 'test'`
+Run unit tests: `cargo test --lib`
+Watch unit tests: `cargo watch -w src -x 'test --lib'`

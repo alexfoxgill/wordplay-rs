@@ -13,3 +13,10 @@ num-traits = "0.2"
 strum = "0.23"
 strum_macros = "0.23"
 lazy_static = "1.4"
+
+[dev-dependencies]
+criterion = "0.3"
+
+[[bench]]
+name = "wordplay_bench"
+harness = false

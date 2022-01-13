@@ -151,6 +151,12 @@ impl TrieSearch {
         }
     }
 
+    pub fn exactly(str: &str) -> Self {
+        let search = TrieSearch::from_prefix(str);
+        let len = search.prefix.len();
+        search.with_min(len).with_max(len)
+    }
+
     pub fn with_min(&self, min: usize) -> Self {
         TrieSearch {
             min_depth: Some(min),

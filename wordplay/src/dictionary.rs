@@ -1,7 +1,7 @@
 use crate::anagram_number::AnagramNumber;
 use crate::char_freq::CharFreq;
 use crate::char_match::CharMatch;
-use crate::normalized_word::{NormalizedChar, NormalizedWord};
+use crate::normalized_word::NormalizedWord;
 use crate::trie::{Trie, TriePrefix, TrieSearch};
 use std::convert::TryFrom;
 use std::fs::File;

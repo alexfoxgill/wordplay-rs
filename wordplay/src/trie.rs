@@ -131,7 +131,7 @@ impl TriePrefix {
         self.len() == 0
     }
 
-    pub fn from_str(str: &str) -> Self {
+    pub fn from_pattern(str: &str) -> Self {
         TriePrefix {
             chars: str.chars().map(CharMatch::from).collect(),
         }
@@ -164,7 +164,7 @@ impl TrieSearch {
 
     pub fn from_prefix(str: &str) -> Self {
         TrieSearch {
-            prefix: TriePrefix::from_str(str),
+            prefix: TriePrefix::from_pattern(str),
             ..Default::default()
         }
     }

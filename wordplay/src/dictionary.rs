@@ -1,7 +1,8 @@
 use crate::anagram_number::AnagramNumber;
 use crate::char_freq::CharFreq;
-use crate::normalized_word::NormalizedWord;
-use crate::trie::{Trie, TrieSearch};
+use crate::char_match::CharMatch;
+use crate::normalized_word::{NormalizedChar, NormalizedWord};
+use crate::trie::{Trie, TriePrefix, TrieSearch};
 use std::convert::TryFrom;
 use std::fs::File;
 use std::io::{BufRead, BufReader};
@@ -70,8 +71,9 @@ impl Dictionary {
         self.trie.iter().map(|x| x.into())
     }
 
-    pub fn iter_search(&self, search: TrieSearch) -> impl Iterator<Item = DictIterItem> {
-        self.trie.iter_search(search).map(|x| x.into())
+    pub fn iter_search(&self, search: DictSearch) -> impl Iterator<Item = DictIterItem> {
+        let trie_search = search.to_trie_search();
+        self.trie.iter_search(trie_search).map(|x| x.into())
     }
 }
 
@@ -88,6 +90,78 @@ impl<'a> FromIterator<&'a str> for Dictionary {
         let mut dict: Dictionary = Default::default();
         dict.extend(iter);
         dict
+    }
+}
+
+#[derive(Debug, PartialEq, Clone, Copy)]
+pub enum StringMatchElement {
+    Char(CharMatch),
+    Any,
+}
+
+impl From<char> for StringMatchElement {
+    fn from(ch: char) -> StringMatchElement {
+        match ch {
+            '*' => StringMatchElement::Any,
+            x => StringMatchElement::Char(x.into()),
+        }
+    }
+}
+
+#[derive(Debug, PartialEq, Clone)]
+pub struct StringMatch {
+    elements: Vec<StringMatchElement>,
+}
+
+impl StringMatch {
+    pub fn from_pattern(pattern: &str) -> StringMatch {
+        StringMatch {
+            elements: pattern.chars().map(|c| c.into()).collect(),
+        }
+    }
+}
+
+impl StringMatch {
+    pub fn to_prefix(&self) -> (TriePrefix, &[StringMatchElement]) {
+        let mut char_match = Vec::new();
+        let mut i = 0;
+        for c in self.elements.iter() {
+            match c {
+                StringMatchElement::Char(cm) => char_match.push(*cm),
+                StringMatchElement::Any => break,
+            }
+            i += 1;
+        }
+
+        (TriePrefix::new(char_match), &self.elements[i..])
+    }
+}
+
+#[derive(Debug, PartialEq, Default)]
+pub struct DictSearch {
+    matches: Option<StringMatch>,
+    anagram: Option<AnagramNumber>,
+    min_length: Option<usize>,
+    max_length: Option<usize>,
+}
+
+impl DictSearch {
+    pub fn from_pattern(pattern: &str) -> DictSearch {
+        let string_match = StringMatch::from_pattern(pattern);
+        DictSearch {
+            matches: Some(string_match),
+            ..Default::default()
+        }
+    }
+
+    pub fn to_trie_search(&self) -> TrieSearch {
+        let prefix = self
+            .matches
+            .as_ref()
+            .map(|m| m.to_prefix().0)
+            .unwrap_or_default();
+
+        TrieSearch::new(prefix, self.min_length, self.max_length)
     }
 }
 

@@ -8,3 +8,4 @@ pub mod char_map;
 pub mod dictionary;
 pub mod normalized_word;
 pub mod trie;
+pub mod char_match;

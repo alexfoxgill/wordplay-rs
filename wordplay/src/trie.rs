@@ -1,4 +1,5 @@
 use crate::char_map::CharMap;
+use crate::char_match::CharMatch;
 use crate::normalized_word::*;
 use std::collections::VecDeque;
 use std::iter::FromIterator;
@@ -112,41 +113,58 @@ impl<T> Default for Trie<T> {
     }
 }
 
-#[derive(Debug, PartialEq, Copy, Clone)]
-pub enum PrefixChar {
-    Only(NormalizedChar),
-    Any,
+#[derive(Debug, PartialEq, Default, Clone)]
+pub struct TriePrefix {
+    chars: Vec<CharMatch>,
 }
 
-impl From<char> for PrefixChar {
-    fn from(ch: char) -> Self {
-        match ch {
-            ' ' | '.' | '?' => PrefixChar::Any,
-            _ => PrefixChar::Only(NormalizedChar::from_char(ch).expect("Unknown search char")),
+impl TriePrefix {
+    pub fn new(chars: Vec<CharMatch>) -> Self {
+        Self { chars }
+    }
+
+    pub fn len(&self) -> usize {
+        self.chars.len()
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.len() == 0
+    }
+
+    pub fn from_str(str: &str) -> Self {
+        TriePrefix {
+            chars: str.chars().map(CharMatch::from).collect(),
         }
     }
-}
 
-impl PrefixChar {
-    pub fn matches(&self, ch: &NormalizedChar) -> bool {
-        match self {
-            PrefixChar::Only(exp) => exp == ch,
-            PrefixChar::Any => true,
+    pub fn get_char_restriction(&self, depth: usize) -> CharMatch {
+        if depth < self.chars.len() {
+            self.chars[depth]
+        } else {
+            CharMatch::Any
         }
     }
 }
 
 #[derive(Debug, PartialEq, Default, Clone)]
 pub struct TrieSearch {
+    prefix: TriePrefix,
     min_depth: Option<usize>,
     max_depth: Option<usize>,
-    prefix: Vec<PrefixChar>,
 }
 
 impl TrieSearch {
+    pub fn new(prefix: TriePrefix, min_depth: Option<usize>, max_depth: Option<usize>) -> Self {
+        Self {
+            prefix,
+            min_depth,
+            max_depth,
+        }
+    }
+
     pub fn from_prefix(str: &str) -> Self {
         TrieSearch {
-            prefix: str.chars().map(PrefixChar::from).collect(),
+            prefix: TriePrefix::from_str(str),
             ..Default::default()
         }
     }
@@ -179,12 +197,8 @@ impl TrieSearch {
         self.max_depth.map_or(true, |m| depth < m)
     }
 
-    pub fn get_char_restriction(&self, depth: usize) -> PrefixChar {
-        if depth < self.prefix.len() {
-            self.prefix[depth]
-        } else {
-            PrefixChar::Any
-        }
+    pub fn get_char_restriction(&self, depth: usize) -> CharMatch {
+        self.prefix.get_char_restriction(depth)
     }
 }
 

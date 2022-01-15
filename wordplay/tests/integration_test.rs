@@ -2,7 +2,7 @@
 extern crate lazy_static;
 use std::fs::File;
 
-use wordplay::{dictionary::Dictionary, trie::TrieSearch};
+use wordplay::dictionary::{DictSearch, Dictionary};
 
 lazy_static! {
     static ref DICT: Dictionary = {
@@ -19,7 +19,7 @@ fn file_loads_all_lines() {
 
 #[test]
 fn find_matching_words() {
-    let search = TrieSearch::from_prefix("?ana").with_min(6).with_max(6);
+    let search = DictSearch::from_pattern("?ana");
 
     let mut iter = DICT.iter_search(search).map(|x| &x.original[..]);
 

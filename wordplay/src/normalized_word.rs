@@ -1,4 +1,7 @@
-use std::slice::Iter;
+use std::{
+    ops::Index,
+    slice::{Iter, SliceIndex},
+};
 
 use strum::IntoEnumIterator;
 use strum_macros::EnumIter;
@@ -126,6 +129,17 @@ impl From<&str> for NormalizedWord {
 impl Default for NormalizedWord {
     fn default() -> NormalizedWord {
         NormalizedWord::new(Default::default())
+    }
+}
+
+impl<Idx> Index<Idx> for NormalizedWord
+where
+    Idx: SliceIndex<[NormalizedChar]>,
+{
+    type Output = Idx::Output;
+
+    fn index(&self, index: Idx) -> &Self::Output {
+        &self.chars[index]
     }
 }
 

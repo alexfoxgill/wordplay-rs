@@ -1,7 +1,7 @@
 use crate::anagram_number::AnagramNumber;
 use crate::char_freq::CharFreq;
 use crate::char_match::CharMatch;
-use crate::normalized_word::NormalizedWord;
+use crate::normalized_word::{NormalizedChar, NormalizedWord};
 use crate::trie::{Trie, TriePrefix, TrieSearch};
 use std::convert::{TryFrom, TryInto};
 use std::fs::File;
@@ -71,11 +71,22 @@ impl Dictionary {
     }
 
     pub fn iter_search(&self, search: DictSearch) -> impl Iterator<Item = DictIterItem> {
-        let trie_search = search.to_trie_search();
+        let prefix = search.prefix.unwrap_or_default();
+        let trie_search = TrieSearch::new(prefix, search.max_length);
+        let anag = search.anagram;
+
         self.trie
             .iter_search(trie_search)
             .map(DictIterItem::from)
-            .filter(move |x| search.filter_entry(x))
+            .filter(move |x| {
+                match anag {
+                    None => (),
+                    exp if x.anag_num == exp => return true,
+                    _ => return false,
+                }
+
+                true
+            })
     }
 }
 
@@ -95,78 +106,20 @@ impl<'a> FromIterator<&'a str> for Dictionary {
     }
 }
 
-#[derive(Debug, PartialEq, Clone, Copy)]
-pub enum StringMatchElement {
-    Char(CharMatch),
-    Any,
-}
-
-impl From<char> for StringMatchElement {
-    fn from(ch: char) -> StringMatchElement {
-        match ch {
-            '*' => StringMatchElement::Any,
-            x => StringMatchElement::Char(x.into()),
-        }
-    }
-}
-
-#[derive(Debug, PartialEq, Clone)]
-pub struct StringMatch {
-    elements: Vec<StringMatchElement>,
-}
-
-impl StringMatch {
-    pub fn from_pattern(pattern: &str) -> StringMatch {
-        StringMatch {
-            elements: pattern.chars().map(|c| c.into()).collect(),
-        }
-    }
-
-    pub fn max_length(&self) -> Option<usize> {
-        if self.elements.iter().any(|&x| x == StringMatchElement::Any) {
-            None
-        } else {
-            Some(self.elements.len())
-        }
-    }
-
-    pub fn any_with_length(len: usize) -> StringMatch {
-        StringMatch {
-            elements: vec![StringMatchElement::Char(CharMatch::Any); len],
-        }
-    }
-}
-
-impl StringMatch {
-    pub fn to_prefix(&self) -> (TriePrefix, &[StringMatchElement]) {
-        let mut char_match = Vec::new();
-        let mut i = 0;
-        for c in self.elements.iter() {
-            match c {
-                StringMatchElement::Char(cm) => char_match.push(*cm),
-                StringMatchElement::Any => break,
-            }
-            i += 1;
-        }
-
-        (TriePrefix::new(char_match), &self.elements[i..])
-    }
-}
-
 #[derive(Debug, PartialEq, Default)]
 pub struct DictSearch {
-    matches: Option<StringMatch>,
+    prefix: Option<TriePrefix>,
     anagram: Option<AnagramNumber>,
     max_length: Option<usize>,
 }
 
 impl DictSearch {
     pub fn from_pattern(pattern: &str) -> DictSearch {
-        let string_match = StringMatch::from_pattern(pattern);
-        let max_length = string_match.max_length();
+        let prefix = TriePrefix::from_pattern(pattern);
+        let max_length = prefix.len();
         DictSearch {
-            matches: Some(string_match),
-            max_length,
+            prefix: Some(prefix),
+            max_length: Some(max_length),
             ..Default::default()
         }
     }
@@ -175,26 +128,12 @@ impl DictSearch {
         let word = NormalizedWord::from_str_safe(str);
         let anagram: AnagramNumber = (&word).try_into().unwrap();
         let len = word.len();
-        let matches = StringMatch::any_with_length(len);
+        let prefix = TriePrefix::new(vec![CharMatch::Any; len]);
         DictSearch {
-            matches: Some(matches),
+            prefix: Some(prefix),
             anagram: Some(anagram),
             max_length: Some(len),
         }
-    }
-
-    pub fn to_trie_search(&self) -> TrieSearch {
-        let prefix = self
-            .matches
-            .as_ref()
-            .map(|m| m.to_prefix().0)
-            .unwrap_or_default();
-
-        TrieSearch::new(prefix, self.max_length)
-    }
-
-    pub fn filter_entry(&self, entry: &DictIterItem) -> bool {
-        self.anagram.map_or(true, |x| entry.anag_num == Some(x))
     }
 }
 

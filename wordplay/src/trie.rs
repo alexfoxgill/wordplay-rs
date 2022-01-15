@@ -189,6 +189,10 @@ impl TrieSearch {
     pub fn get_char_restriction(&self, depth: usize) -> CharMatch {
         self.prefix.get_char_restriction(depth)
     }
+
+    pub fn prefix_len(&self) -> usize {
+        self.prefix.len()
+    }
 }
 
 pub struct TrieIter<'a, T> {

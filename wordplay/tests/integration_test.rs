@@ -23,7 +23,7 @@ mod enable_tests {
 
     #[test]
     fn find_matching_words() {
-        let search = DictSearch::from_pattern("?ana*");
+        let search = DictSearch::from_pattern("?ana??");
 
         let mut iter = ENABLE.iter_search(search).map(|x| &x.original[..]);
 

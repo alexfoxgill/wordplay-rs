@@ -71,8 +71,7 @@ impl Dictionary {
     }
 
     pub fn iter_search(&self, search: DictSearch) -> impl Iterator<Item = DictIterItem> {
-        let prefix = search.prefix.unwrap_or_default();
-        let trie_search = TrieSearch::new(prefix, search.max_length);
+        let trie_search = search.trie_search.unwrap_or_default();
         let anag = search.anagram;
 
         self.trie
@@ -106,20 +105,25 @@ impl<'a> FromIterator<&'a str> for Dictionary {
     }
 }
 
+pub enum WordPredicate {
+    AnagramOf(AnagramNumber),
+    SubanagramOf(AnagramNumber),
+    SuperanagramOf(AnagramNumber),
+}
+
 #[derive(Debug, PartialEq, Default)]
 pub struct DictSearch {
-    prefix: Option<TriePrefix>,
     anagram: Option<AnagramNumber>,
-    max_length: Option<usize>,
+    trie_search: Option<TrieSearch>,
 }
 
 impl DictSearch {
     pub fn from_pattern(pattern: &str) -> DictSearch {
         let prefix = TriePrefix::from_pattern(pattern);
         let max_length = prefix.len();
+        let trie_search = Some(TrieSearch::new(prefix, Some(max_length)));
         DictSearch {
-            prefix: Some(prefix),
-            max_length: Some(max_length),
+            trie_search,
             ..Default::default()
         }
     }
@@ -129,10 +133,10 @@ impl DictSearch {
         let anagram: AnagramNumber = (&word).try_into().unwrap();
         let len = word.len();
         let prefix = TriePrefix::new(vec![CharMatch::Any; len]);
+        let trie_search = Some(TrieSearch::new(prefix, Some(len)));
         DictSearch {
-            prefix: Some(prefix),
             anagram: Some(anagram),
-            max_length: Some(len),
+            trie_search,
         }
     }
 }

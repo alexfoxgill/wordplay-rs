@@ -118,6 +118,14 @@ impl StringMatch {
             elements: pattern.chars().map(|c| c.into()).collect(),
         }
     }
+
+    pub fn max_length(&self) -> Option<usize> {
+        if self.elements.iter().any(|&x| x == StringMatchElement::Any) {
+            None
+        } else {
+            Some(self.elements.len())
+        }
+    }
 }
 
 impl StringMatch {
@@ -146,8 +154,10 @@ pub struct DictSearch {
 impl DictSearch {
     pub fn from_pattern(pattern: &str) -> DictSearch {
         let string_match = StringMatch::from_pattern(pattern);
+        let max_length = string_match.max_length();
         DictSearch {
             matches: Some(string_match),
+            max_length,
             ..Default::default()
         }
     }

@@ -70,10 +70,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "cli"
-version = "0.1.0"
-
-[[package]]
 name = "criterion"
 version = "0.3.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -720,7 +716,11 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "712e227841d057c1ee1cd2fb22fa7e5a5461ae8e48fa2ca79ec42cfc1931183f"
 
 [[package]]
-name = "wordplay_core"
+name = "wordplay-cli"
+version = "0.1.0"
+
+[[package]]
+name = "wordplay-core"
 version = "0.1.0"
 dependencies = [
  "criterion",

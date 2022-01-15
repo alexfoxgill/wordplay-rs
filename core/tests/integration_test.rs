@@ -2,7 +2,7 @@
 extern crate lazy_static;
 use std::fs::File;
 
-use wordplay::dictionary::{DictSearch, Dictionary};
+use wordplay_core::dictionary::{DictSearch, Dictionary};
 
 #[cfg(test)]
 mod enable_tests {

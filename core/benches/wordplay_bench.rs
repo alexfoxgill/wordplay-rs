@@ -1,7 +1,7 @@
 use std::fs::File;
 
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
-use wordplay::{
+use wordplay_core::{
     dictionary::{DictSearch, Dictionary},
     normalized_word::NormalizedWord,
 };

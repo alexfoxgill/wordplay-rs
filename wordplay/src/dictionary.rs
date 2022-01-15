@@ -1,7 +1,7 @@
-use crate::anagram_number::AnagramNumber;
+use crate::anagram_number::{AnagramComparison, AnagramNumber};
 use crate::char_freq::CharFreq;
 use crate::char_match::CharMatch;
-use crate::normalized_word::{NormalizedChar, NormalizedWord};
+use crate::normalized_word::NormalizedWord;
 use crate::trie::{Trie, TriePrefix, TrieSearch};
 use std::convert::{TryFrom, TryInto};
 use std::fs::File;
@@ -72,20 +72,12 @@ impl Dictionary {
 
     pub fn iter_search(&self, search: DictSearch) -> impl Iterator<Item = DictIterItem> {
         let trie_search = search.trie_search.unwrap_or_default();
-        let anag = search.anagram;
+        let predicate = search.predicate;
 
         self.trie
             .iter_search(trie_search)
             .map(DictIterItem::from)
-            .filter(move |x| {
-                match anag {
-                    None => (),
-                    exp if x.anag_num == exp => return true,
-                    _ => return false,
-                }
-
-                true
-            })
+            .filter(move |x| predicate.matches(x))
     }
 }
 
@@ -105,16 +97,41 @@ impl<'a> FromIterator<&'a str> for Dictionary {
     }
 }
 
+#[derive(Debug, PartialEq, Clone)]
 pub enum WordPredicate {
     AnagramOf(AnagramNumber),
     SubanagramOf(AnagramNumber),
     SuperanagramOf(AnagramNumber),
+    All(Vec<WordPredicate>),
+    Any(Vec<WordPredicate>),
+    None,
+}
+
+impl WordPredicate {
+    pub fn matches(&self, entry: &DictIterItem) -> bool {
+        use AnagramComparison::*;
+        use WordPredicate::*;
+        match self {
+            AnagramOf(anag) => entry.anag_num.map_or(false, |x| anag.compare(x) == Exact),
+            SubanagramOf(anag) => entry.anag_num.map_or(true, |x| anag.compare(x) == Subset),
+            SuperanagramOf(anag) => entry.anag_num.map_or(true, |x| anag.compare(x) == Superset),
+            All(predicates) => predicates.iter().all(|x| x.matches(entry)),
+            Any(predicates) => predicates.iter().any(|x| x.matches(entry)),
+            None => true,
+        }
+    }
+}
+
+impl Default for WordPredicate {
+    fn default() -> Self {
+        WordPredicate::None
+    }
 }
 
 #[derive(Debug, PartialEq, Default)]
 pub struct DictSearch {
-    anagram: Option<AnagramNumber>,
     trie_search: Option<TrieSearch>,
+    predicate: WordPredicate,
 }
 
 impl DictSearch {
@@ -135,8 +152,8 @@ impl DictSearch {
         let prefix = TriePrefix::new(vec![CharMatch::Any; len]);
         let trie_search = Some(TrieSearch::new(prefix, Some(len)));
         DictSearch {
-            anagram: Some(anagram),
             trie_search,
+            predicate: WordPredicate::AnagramOf(anagram),
         }
     }
 }

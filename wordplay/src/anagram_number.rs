@@ -16,8 +16,8 @@ pub enum AnagramComparison {
 }
 
 impl AnagramNumber {
-    pub fn compare(self, other: AnagramNumber) -> AnagramComparison {
-        match (self, other) {
+    pub fn compare(&self, other: AnagramNumber) -> AnagramComparison {
+        match (*self, other) {
             (a, b) if a == b => AnagramComparison::Exact,
             (a, b) if a < b && b.0 % a.0 == 0 => AnagramComparison::Superset,
             (a, b) if a > b && a.0 % b.0 == 0 => AnagramComparison::Subset,

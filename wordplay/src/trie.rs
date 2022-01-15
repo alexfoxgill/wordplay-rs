@@ -60,9 +60,8 @@ impl<T> Trie<T> {
 
     pub fn iter_range(&self, range: RangeInclusive<usize>) -> TrieIter<T> {
         let search = TrieSearch {
-            min_depth: Some(*range.start()),
+            prefix: TriePrefix::any_with_length(*range.start()),
             max_depth: Some(*range.end()),
-            ..Default::default()
         };
         TrieIter::new(self, search)
     }
@@ -123,6 +122,12 @@ impl TriePrefix {
         Self { chars }
     }
 
+    pub fn any_with_length(len: usize) -> Self {
+        Self {
+            chars: vec![CharMatch::Any; len],
+        }
+    }
+
     pub fn len(&self) -> usize {
         self.chars.len()
     }
@@ -149,17 +154,12 @@ impl TriePrefix {
 #[derive(Debug, PartialEq, Default, Clone)]
 pub struct TrieSearch {
     prefix: TriePrefix,
-    min_depth: Option<usize>,
     max_depth: Option<usize>,
 }
 
 impl TrieSearch {
-    pub fn new(prefix: TriePrefix, min_depth: Option<usize>, max_depth: Option<usize>) -> Self {
-        Self {
-            prefix,
-            min_depth,
-            max_depth,
-        }
+    pub fn new(prefix: TriePrefix, max_depth: Option<usize>) -> Self {
+        Self { prefix, max_depth }
     }
 
     pub fn from_prefix(str: &str) -> Self {
@@ -172,14 +172,7 @@ impl TrieSearch {
     pub fn exactly(str: &str) -> Self {
         let search = TrieSearch::from_prefix(str);
         let len = search.prefix.len();
-        search.with_min(len).with_max(len)
-    }
-
-    pub fn with_min(&self, min: usize) -> Self {
-        TrieSearch {
-            min_depth: Some(min),
-            ..self.clone()
-        }
+        search.with_max(len)
     }
 
     pub fn with_max(&self, max: usize) -> Self {
@@ -187,10 +180,6 @@ impl TrieSearch {
             max_depth: Some(max),
             ..self.clone()
         }
-    }
-
-    pub fn above_min(&self, depth: usize) -> bool {
-        self.min_depth.map_or(true, |m| m <= depth)
     }
 
     pub fn below_max(&self, depth: usize) -> bool {
@@ -225,7 +214,7 @@ impl<'a, T> TrieIter<'a, T> {
 
         let prefix_len = self.search.prefix.len();
 
-        if prefix_len <= depth && self.search.above_min(depth) {
+        if prefix_len <= depth {
             self.terminal_queue
                 .extend(node.terminals.iter().map(|t| (word.clone(), t)));
         }

@@ -16,7 +16,6 @@ pub struct DictEntry {
 }
 
 #[derive(Debug, Clone, PartialEq)]
-
 pub struct DictIterItem<'a> {
     pub normalized: NormalizedWord,
     pub char_freq: &'a CharFreq,
@@ -141,7 +140,6 @@ impl StringMatch {
 pub struct DictSearch {
     matches: Option<StringMatch>,
     anagram: Option<AnagramNumber>,
-    min_length: Option<usize>,
     max_length: Option<usize>,
 }
 
@@ -161,7 +159,7 @@ impl DictSearch {
             .map(|m| m.to_prefix().0)
             .unwrap_or_default();
 
-        TrieSearch::new(prefix, self.min_length, self.max_length)
+        TrieSearch::new(prefix, self.max_length)
     }
 }
 

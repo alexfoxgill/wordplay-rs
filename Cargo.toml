@@ -1,13 +1,13 @@
 [workspace]
 
 members = [
-    "wordplay",
+    "core",
 ]
 
 [package]
-name = "wordplay_api"
+name = "wordplay"
 version = "0.1.0"
-authors = ["Alex Gill <alex.gill@depop.com>"]
+authors = ["Alex Gill <email@alexfoxgill.com>"]
 edition = "2018"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html

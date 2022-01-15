@@ -1,5 +1,5 @@
 [package]
-name = "wordplay"
+name = "core"
 version = "0.1.0"
 authors = ["Alex Gill <alex.gill@depop.com>"]
 edition = "2018"

@@ -3,7 +3,7 @@ use crate::char_freq::CharFreq;
 use crate::char_match::CharMatch;
 use crate::normalized_word::NormalizedWord;
 use crate::trie::{Trie, TriePrefix, TrieSearch};
-use std::convert::TryFrom;
+use std::convert::{TryFrom, TryInto};
 use std::fs::File;
 use std::io::{BufRead, BufReader};
 use std::iter::FromIterator;
@@ -72,7 +72,10 @@ impl Dictionary {
 
     pub fn iter_search(&self, search: DictSearch) -> impl Iterator<Item = DictIterItem> {
         let trie_search = search.to_trie_search();
-        self.trie.iter_search(trie_search).map(|x| x.into())
+        self.trie
+            .iter_search(trie_search)
+            .map(DictIterItem::from)
+            .filter(move |x| search.filter_entry(x))
     }
 }
 
@@ -126,6 +129,12 @@ impl StringMatch {
             Some(self.elements.len())
         }
     }
+
+    pub fn any_with_length(len: usize) -> StringMatch {
+        StringMatch {
+            elements: vec![StringMatchElement::Char(CharMatch::Any); len],
+        }
+    }
 }
 
 impl StringMatch {
@@ -162,6 +171,18 @@ impl DictSearch {
         }
     }
 
+    pub fn anagram_of(str: &str) -> DictSearch {
+        let word = NormalizedWord::from_str_safe(str);
+        let anagram: AnagramNumber = (&word).try_into().unwrap();
+        let len = word.len();
+        let matches = StringMatch::any_with_length(len);
+        DictSearch {
+            matches: Some(matches),
+            anagram: Some(anagram),
+            max_length: Some(len),
+        }
+    }
+
     pub fn to_trie_search(&self) -> TrieSearch {
         let prefix = self
             .matches
@@ -170,6 +191,10 @@ impl DictSearch {
             .unwrap_or_default();
 
         TrieSearch::new(prefix, self.max_length)
+    }
+
+    pub fn filter_entry(&self, entry: &DictIterItem) -> bool {
+        self.anagram.map_or(true, |x| entry.anag_num == Some(x))
     }
 }
 
@@ -212,5 +237,15 @@ mod tests {
         let nw = NormalizedWord::from_str_safe("foo");
         let res = dict.find(&nw);
         assert!(res.is_some())
+    }
+
+    #[test]
+    fn search_anagram() {
+        let dict = Dictionary::from_iter(vec!["cat", "bat", "bait", "at"]);
+
+        let search = DictSearch::anagram_of("tab");
+        let res: Vec<_> = dict.iter_search(search).map(|x| x.original).collect();
+
+        assert_eq!(res, vec!["bat"])
     }
 }

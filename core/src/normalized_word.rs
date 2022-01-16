@@ -7,7 +7,7 @@ use strum::IntoEnumIterator;
 use strum_macros::EnumIter;
 
 #[repr(u8)]
-#[derive(Debug, PartialEq, Clone, Copy, FromPrimitive, EnumIter)]
+#[derive(Debug, PartialEq, Eq, Clone, Copy, FromPrimitive, EnumIter, PartialOrd, Ord)]
 pub enum NormalizedChar {
     A,
     B,
@@ -69,7 +69,7 @@ impl NormalizedChar {
     }
 }
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, Eq, PartialEq, Clone, PartialOrd, Ord)]
 pub struct NormalizedWord {
     chars: Vec<NormalizedChar>,
 }

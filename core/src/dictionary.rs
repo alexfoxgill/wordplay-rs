@@ -135,6 +135,13 @@ pub struct DictSearch {
 }
 
 impl DictSearch {
+    pub fn new(trie_search: Option<TrieSearch>, predicate: WordPredicate) -> Self {
+        Self {
+            trie_search,
+            predicate,
+        }
+    }
+
     pub fn from_pattern(pattern: &str) -> DictSearch {
         let prefix = TriePrefix::from_pattern(pattern);
         let max_length = prefix.len();

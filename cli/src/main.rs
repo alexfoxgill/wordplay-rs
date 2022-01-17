@@ -7,7 +7,7 @@ use std::{
 use wordplay_core::{
     anagram_number::AnagramNumber,
     dict_enable,
-    dictionary::{DictEntry, DictIterItem, DictSearch, Dictionary, WordPredicate},
+    dictionary::{DictIterItem, DictSearch, Dictionary, WordPredicate},
     normalized_word::NormalizedWord,
     trie::TrieSearch,
 };
@@ -25,11 +25,16 @@ fn parse_line(str: &str) -> Option<Command> {
 
     if let Some(stripped) = str.strip_prefix("f ") {
         let mut prefix: String = "".into();
+        let mut max_length: Option<usize> = None;
         let mut predicates: Vec<WordPredicate> = vec![];
         let mut sort: Option<Sort> = None;
         for cmd in stripped.split(',') {
             let cmd_parts: Vec<_> = cmd.trim().split(' ').collect();
             match cmd_parts.as_slice() {
+                ["len", max] => match max.parse() {
+                    Ok(m) => max_length = Some(m),
+                    Err(_) => continue,
+                },
                 ["p", p] => prefix = String::from(*p),
                 ["a", a] => {
                     let nw = NormalizedWord::from_str_safe(a);
@@ -62,6 +67,7 @@ fn parse_line(str: &str) -> Option<Command> {
             prefix,
             predicate: WordPredicate::All(predicates),
             sort,
+            max_length,
         });
     }
 
@@ -102,6 +108,7 @@ enum Command {
         prefix: String,
         predicate: WordPredicate,
         sort: Option<Sort>,
+        max_length: Option<usize>,
     },
     Quit,
 }
@@ -132,9 +139,13 @@ fn command_loop(dict: Dictionary) {
                 prefix,
                 predicate,
                 sort,
+                max_length,
             }) => {
                 println!("Finding...");
-                let trie_search = TrieSearch::from_prefix(&prefix);
+                let mut trie_search = TrieSearch::from_prefix(&prefix);
+                if let Some(max) = max_length {
+                    trie_search = trie_search.with_max(max);
+                }
                 let search = DictSearch::new(Some(trie_search), predicate);
                 let results = dict.iter_search(search);
                 match sort {

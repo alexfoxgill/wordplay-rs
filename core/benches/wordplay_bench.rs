@@ -1,4 +1,5 @@
 use std::fs::File;
+use std::env::current_dir;
 
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
 use wordplay_core::{
@@ -7,7 +8,8 @@ use wordplay_core::{
 };
 
 fn enable_bench(c: &mut Criterion) {
-    let enable = Dictionary::from_file(File::open("data/enable.txt").unwrap());
+    println!("{:?}", current_dir().unwrap());
+    let enable = Dictionary::from_file(File::open("../data/enable.txt").unwrap());
 
     c.bench_function("enable find banana", |b| {
         let banana = NormalizedWord::from_str_safe("banana");
